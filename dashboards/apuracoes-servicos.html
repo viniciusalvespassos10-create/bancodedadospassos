@@ -1,0 +1,294 @@
+<title>Apurações de Serviços</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#0a0e1e; --bg-header:#070a16; --card:#131a2e; --card-soft:#111729;
+    --border:rgba(255,255,255,0.08); --border-soft:rgba(255,255,255,0.05);
+    --text:#f1f3f9; --text-dim:#8b93ab; --text-faint:#5b6280;
+    --blue:#3b7cf6; --blue-soft:rgba(59,124,246,0.14);
+    --green:#22c55e; --green-soft:rgba(34,197,94,0.14);
+    --red:#f0554d; --red-soft:rgba(240,85,77,0.14);
+    --radius:14px; --radius-sm:10px;
+  }
+  html[data-theme="light"]{
+    --bg:#f4f6fb; --bg-header:#ffffff; --card:#ffffff; --card-soft:#f4f6fb;
+    --border:rgba(15,23,42,0.09); --border-soft:rgba(15,23,42,0.06);
+    --text:#141a2c; --text-dim:#5b6280; --text-faint:#8b93ab;
+  }
+  html,body{background:var(--bg);color:var(--text);}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;font-size:14px;transition:background .15s,color .15s;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:#20263c;border-radius:8px;}
+  html[data-theme="light"] ::-webkit-scrollbar-thumb{background:#d7dbe8;}
+  .icon{width:18px;height:18px;flex-shrink:0;}
+  .icon-sm{width:14px;height:14px;flex-shrink:0;}
+  header{background:var(--bg-header);border-bottom:1px solid var(--border-soft);padding:16px 30px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:20;}
+  .brand{display:flex;align-items:center;gap:11px;}
+  .brand-mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(145deg,#3b7cf6,#2454c7);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;letter-spacing:-0.5px;flex-shrink:0;}
+  .brand-name{font-size:14.5px;font-weight:800;letter-spacing:0.3px;line-height:1.25;}
+  .brand-sub{font-size:9.5px;color:var(--text-faint);letter-spacing:1.4px;font-weight:700;margin-top:1px;display:flex;align-items:center;gap:6px;}
+  .sync-badge{display:none;align-items:center;gap:4px;color:var(--green);font-weight:800;}
+  .header-right{display:flex;align-items:center;gap:10px;}
+  .icon-btn{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;background:var(--card);border:1px solid var(--border);cursor:pointer;flex-shrink:0;}
+  .icon-btn svg{stroke:var(--text-dim);}
+  .icon-btn:hover{background:rgba(120,130,160,0.09);}
+  .btn-home{display:flex;align-items:center;gap:8px;padding:9px 16px;border-radius:10px;border:1px solid var(--blue);background:var(--blue-soft);color:var(--blue);font-size:12.5px;font-family:inherit;font-weight:700;text-decoration:none;cursor:pointer;transition:background .12s;white-space:nowrap;flex-shrink:0;}
+  .btn-home:hover{background:rgba(59,124,246,0.24);}
+  .btn-home svg{stroke:var(--blue);flex-shrink:0;}
+  main{max-width:1180px;margin:0 auto;padding:26px 30px 60px;}
+  .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
+  .page-head h1{font-size:21px;font-weight:800;letter-spacing:0.2px;}
+  .page-head .sub{font-size:12px;color:var(--text-dim);margin-top:5px;max-width:60ch;line-height:1.6;}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px;}
+  .search-wrap{position:relative;flex:1;min-width:220px;}
+  .search-wrap svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);stroke:var(--text-faint);}
+  .search-wrap input{width:100%;padding:10px 14px 10px 38px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;outline:none;}
+  .search-wrap input:focus{border-color:var(--blue);}
+  .btn-primary{background:var(--blue);color:#fff;border:none;font-size:12.5px;font-weight:700;padding:10px 18px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:opacity .12s;}
+  .btn-primary:hover{opacity:.88;}
+  .client-count{font-size:11.5px;color:var(--text-faint);font-weight:600;white-space:nowrap;}
+  .client-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;align-items:start;}
+  .client-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:10px;}
+  .client-card-top{display:flex;align-items:center;gap:8px;}
+  .client-name-input{flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--text);background:var(--card-soft);border:1px solid var(--border-soft);border-radius:8px;padding:8px 10px;outline:none;}
+  .client-name-input:focus{border-color:var(--blue);}
+  .remove-btn{flex-shrink:0;width:32px;height:32px;border-radius:8px;background:var(--red-soft);border:1px solid rgba(240,85,77,0.3);color:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .remove-btn:hover{background:rgba(240,85,77,0.22);}
+  .field-label{font-size:9.5px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--text-faint);}
+  .model-textarea{width:100%;min-height:84px;resize:vertical;padding:9px 11px;border-radius:8px;border:1px solid var(--border-soft);background:var(--card-soft);color:var(--text);font-size:12.5px;font-family:inherit;line-height:1.5;outline:none;}
+  .model-textarea:focus{border-color:var(--blue);}
+  .model-textarea::placeholder{color:var(--text-faint);}
+  .empty-state{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--text-faint);font-size:13px;}
+  .status-bar{margin-top:16px;font-size:11.5px;color:var(--green);font-weight:600;min-height:16px;}
+  .sidebar-foot{display:flex;gap:9px;padding:24px 0 4px;border-top:1px solid var(--border-soft);color:var(--text-faint);font-size:11px;line-height:1.5;margin-top:14px;}
+  .sidebar-foot svg{flex-shrink:0;margin-top:1px;stroke:var(--text-faint);}
+  @media (max-width:640px){
+    header{padding:14px 18px;}
+    main{padding:20px 18px 40px;}
+    .client-grid{grid-template-columns:1fr;}
+  }
+</style>
+<script type="application/json" id="seedData">{}</script>
+<header>
+  <div class="brand">
+    <div class="brand-mark">VP</div>
+    <div>
+      <div class="brand-name">VILA PORTO</div>
+      <div class="brand-sub">APURAÇÕES DE SERVIÇOS <span class="sync-badge" id="syncBadge">● SINCRONIZADO</span></div>
+    </div>
+  </div>
+  <div class="header-right">
+    <a class="btn-home" href="https://claude.ai/code/artifact/a2f16c2a-b621-4e3d-8b7c-670900dd50ba"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/></svg>Menu Principal</a>
+    <div class="icon-btn" id="themeToggle" onclick="toggleTheme()" title="Alternar tema claro/escuro">
+      <svg class="icon" id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+    </div>
+  </div>
+</header>
+<main>
+  <div class="page-head">
+    <div>
+      <h1>Apurações de Serviços</h1>
+      <div class="sub">Lista de clientes para registrar o modelo de cobrança combinado com cada um — serviços, valores e condições específicas.</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="Buscar cliente..." oninput="renderClientes()">
+    </div>
+    <span class="client-count" id="clientCount"></span>
+    <button class="btn-primary" onclick="adicionarCliente()">+ Adicionar cliente</button>
+  </div>
+
+  <div class="client-grid" id="clientGrid"></div>
+  <div class="status-bar" id="statusBar"></div>
+
+  <div class="sidebar-foot">
+    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg>
+    <span>Vila Logistic Park · Lagoa Encantada · Vila Velha — ES</span>
+  </div>
+</main>
+<script>
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme')==='light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', cur);
+  try{ localStorage.setItem('vp_theme', cur); }catch(e){}
+  updateThemeIcon(cur);
+}
+function updateThemeIcon(theme){
+  const el = document.getElementById('themeIcon');
+  if(!el) return;
+  el.innerHTML = theme==='light'
+    ? '<path d="M12 3.5c-4.7 4-4.7 10.5 0 14.5a9 9 0 1 1 0-14.5Z"/>'
+    : '<circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>';
+}
+(function initTheme(){
+  let saved = 'dark';
+  try{ saved = localStorage.getItem('vp_theme') || 'dark'; }catch(e){}
+  document.documentElement.setAttribute('data-theme', saved);
+})();
+
+const STORAGE_KEY = 'vp_apuracoesServicos';
+
+let clientes = [
+  {nome:"777 DISTRIBUIDORA LTDA", modelo:""},
+  {nome:"A C P M SERVICOS E COMERCIO DE PRODUTOS DE INFORMATICA LTDA", modelo:""},
+  {nome:"ALDIO TRANSPORTES E LOGISTICA LTDA", modelo:""},
+  {nome:"ALPHA CAVE COMERCIO DE VINHOS LTDA", modelo:""},
+  {nome:"BILU - NEW IMPORTACAO E EXPORTACAO LTDA", modelo:""},
+  {nome:"COMPANHIA CACIQUE DE CAFE SOLUVEL", modelo:""},
+  {nome:"DUNE DO BRASIL COMERCIO EXTERIOR LTDA", modelo:""},
+  {nome:"EZESA BRASIL PARTICIPAÇÕES LTDA", modelo:""},
+  {nome:"GILFLEX COMERCIO E SERVICOS LTDA", modelo:""},
+  {nome:"GPA SUPLEMENTOS LTDA", modelo:""},
+  {nome:"GRUPO VILA PORTO", modelo:""},
+  {nome:"ILHA BRASIL COMERCIO LTDA", modelo:""},
+  {nome:"LIZENSK COMERCIO IMPORTACAO E EXPORTACAO LTDA", modelo:""},
+  {nome:"MICROWARE TECNOLOGIA DE INFORMACAO LTDA", modelo:""},
+  {nome:"MOT COMERCIO E IMPORTACAO LTDA", modelo:""},
+  {nome:"MR SOLDAS LTDA", modelo:""},
+  {nome:"OLAM AGRICOLA LTDA.", modelo:""},
+  {nome:"QUATTROR COMERCIAL LTDA", modelo:""},
+  {nome:"S & D TECNOLOGIA COMERCIO E SERVICOS DE INFORMATIC", modelo:""},
+  {nome:"SELLER TRADING LTDA", modelo:""},
+  {nome:"TEAM AIR SYSTEMS COMERCIO E IMPORTACAO LTDA", modelo:""},
+  {nome:"VCT BRASIL IMPORTACAO E EXPORTACAO LTDA", modelo:""},
+  {nome:"VILA PORTO INTERNATIONAL BUSINESS S/A", modelo:""},
+  {nome:"VILLA PIVA JUICE & FOODS LTDA", modelo:""}
+];
+
+// ── SINCRONIZAÇÃO ENTRE USUÁRIOS (Artifact self-publish, mesmo mecanismo dos outros painéis) ──
+let artifactNS = null;
+let artifactAvailable = false;
+function lerSeed(){
+  try{
+    const el = document.getElementById('seedData');
+    if(!el) return null;
+    return JSON.parse(el.textContent || '{}');
+  }catch(e){ return null; }
+}
+function updateSyncBadge(){
+  const el = document.getElementById('syncBadge');
+  if(!el) return;
+  el.style.display = artifactAvailable ? 'inline-flex' : 'none';
+  if(artifactAvailable) el.title = 'Todas as pessoas que abrem este link veem os mesmos clientes e modelos.';
+}
+async function construirHtmlComSeed(seedObj){
+  const resp = await fetch(location.href, { cache: 'no-store' });
+  let html = await resp.text();
+  const payload = JSON.stringify(seedObj).replace(/</g, '\\u003c');
+  const re = /(<script type="application\/json" id="seedData">)[\s\S]*?(<\/script>)/;
+  if(!re.test(html)) throw new Error('seed-nao-encontrado');
+  return html.replace(re, `$1${payload}$2`);
+}
+let _publishBusy = false;
+async function publicarAtualizacao(){
+  if(!artifactAvailable || _publishBusy) return;
+  _publishBusy = true;
+  const status = document.getElementById('statusBar');
+  if(status) status.textContent = 'Publicando atualização para todos…';
+  try{
+    const seedObj = { clientes, updatedAt: new Date().toISOString() };
+    const html = await construirHtmlComSeed(seedObj);
+    await artifactNS.publish(html);
+    if(status) status.textContent = '✓ Publicado — todos que abrirem o link agora veem esta atualização.';
+  }catch(e){
+    if(status){
+      if(e && e.code==='not_writer') status.textContent = 'Somente o dono deste painel pode publicar atualizações para todos.';
+      else if(e && e.code==='conflict') status.textContent = 'Outra atualização foi publicada ao mesmo tempo — recarregando…';
+      else status.textContent = '⚠ Não foi possível publicar agora. Alterações salvas apenas neste navegador.';
+    }
+  } finally { _publishBusy = false; }
+}
+let _publishDebounceTimer = null;
+function schedulePublicar(){
+  salvarLocal();
+  if(!artifactAvailable) return;
+  if(_publishDebounceTimer) clearTimeout(_publishDebounceTimer);
+  _publishDebounceTimer = setTimeout(() => { _publishDebounceTimer = null; publicarAtualizacao(); }, 2000);
+}
+function flushPublicar(){
+  salvarLocal();
+  if(_publishDebounceTimer){ clearTimeout(_publishDebounceTimer); _publishDebounceTimer = null; }
+  publicarAtualizacao();
+}
+
+function salvarLocal(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(clientes)); }catch(e){}
+}
+function carregarLocal(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed) && parsed.length>0) clientes = parsed;
+    }
+  }catch(e){}
+}
+
+function renderClientes(){
+  const grid = document.getElementById('clientGrid');
+  const termo = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+  const filtrados = clientes
+    .map((c,i) => ({...c, idx:i}))
+    .filter(c => !termo || c.nome.toLowerCase().includes(termo));
+  document.getElementById('clientCount').textContent = clientes.length + (clientes.length===1?' cliente':' clientes');
+  if(filtrados.length===0){
+    grid.innerHTML = '<div class="empty-state">Nenhum cliente encontrado.</div>';
+    return;
+  }
+  grid.innerHTML = filtrados.map(c => `
+    <div class="client-card">
+      <div class="client-card-top">
+        <input class="client-name-input" value="${c.nome.replace(/"/g,'&quot;')}" onchange="editarNome(${c.idx}, this.value)">
+        <button class="remove-btn" onclick="removerCliente(${c.idx})" title="Remover cliente">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M9 6V4h6v2M6 6l1 14h10l1-14"/></svg>
+        </button>
+      </div>
+      <div class="field-label">Modelo de cobrança</div>
+      <textarea class="model-textarea" placeholder="Descreva os serviços e valores combinados com este cliente..." oninput="editarModelo(${c.idx}, this.value, false)" onchange="editarModelo(${c.idx}, this.value, true)">${(c.modelo||'').replace(/</g,'&lt;')}</textarea>
+    </div>
+  `).join('');
+}
+
+function editarNome(i, valor){
+  clientes[i].nome = valor;
+  flushPublicar();
+}
+function editarModelo(i, valor, imediato){
+  clientes[i].modelo = valor;
+  if(imediato) flushPublicar(); else schedulePublicar();
+}
+function removerCliente(i){
+  if(!confirm(`Remover "${clientes[i].nome}" da lista?`)) return;
+  clientes.splice(i, 1);
+  renderClientes();
+  flushPublicar();
+}
+function adicionarCliente(){
+  clientes.unshift({nome:"Novo Cliente", modelo:""});
+  document.getElementById('searchInput').value = '';
+  renderClientes();
+  flushPublicar();
+}
+
+async function init(){
+  try{
+    if(window.claude && typeof window.claude.use === 'function'){
+      artifactNS = await window.claude.use('artifact');
+    }
+  }catch(e){ artifactNS = null; }
+  artifactAvailable = !!artifactNS;
+  updateSyncBadge();
+  updateThemeIcon(document.documentElement.getAttribute('data-theme'));
+  const seed = lerSeed();
+  if(seed && Array.isArray(seed.clientes) && seed.clientes.length > 0){
+    clientes = seed.clientes;
+  } else {
+    carregarLocal();
+  }
+  renderClientes();
+}
+init();
+</script>
