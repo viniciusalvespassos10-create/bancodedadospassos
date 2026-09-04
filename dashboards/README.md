@@ -10,9 +10,12 @@ Código-fonte dos painéis publicados como Claude Artifacts para a Vila Porto In
 - **Faturamento** (`faturamento-vila-porto.html`) — receita, metas anuais e desempenho mensal por armazém e cliente.
   Publicado em: https://claude.ai/code/artifact/fe45068f-5374-4a27-a5e3-f2bf44e8ecbf
 
+- **Estoque Vila Velha** (`estoque-vila-velha.html`) — ocupação de endereços por cliente no Estabelecimento 15, Vila Velha ES.
+  Publicado em: https://claude.ai/code/artifact/db7de67a-aceb-4217-974b-46959bddf9ef
+
 ## Como funciona a sincronização
 
-O dashboard de Faturamento usa o recurso `artifact` do Claude (auto-publicação): ao importar uma planilha ou editar o orçamento mensal pela aba "Importar Dados", a própria página busca seu HTML atual, atualiza o bloco `<script id="seedData">` com os dados novos e publica uma nova versão de si mesma. Assim, qualquer pessoa com o link vê os dados mais recentes ao abrir a página — sem precisar de login ou banco de dados externo.
+O Faturamento e o Estoque Vila Velha usam o recurso `artifact` do Claude (auto-publicação): ao importar dados novos ou clicar em "Atualizar/Processar", a própria página busca seu HTML atual, atualiza o bloco `<script id="seedData">` com os dados novos e publica uma nova versão de si mesma. Assim, qualquer pessoa com o link vê os dados mais recentes ao abrir a página — sem precisar de login ou banco de dados externo.
 
 ## Publicar uma alteração
 
