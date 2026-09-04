@@ -262,6 +262,7 @@ input.result-input{background:var(--surf3-light);font-weight:600;color:var(--acc
   .dash-grid,.dash-grid3{grid-template-columns:1fr}
 }
 </style>
+<script type="application/json" id="seedData">{}</script>
 <div class="layout">
 
 <!-- Topbar -->
@@ -810,6 +811,30 @@ function setN(id,v){ const el=document.getElementById(id); if(el) el.value=v!==0
 function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]') }catch{ return [] } }
 function save(data){ localStorage.setItem(KEY,JSON.stringify(data)) }
 
+// ─── Sincronização entre visitantes (capacidade "artifact" do Claude) ───
+let artifactNS = null, artifactAvailable = false;
+function lerSeed(){
+  try{
+    const raw = JSON.parse(document.getElementById('seedData').textContent || '{}');
+    return (raw && Array.isArray(raw.records) && raw.records.length) ? raw : null;
+  }catch(e){ return null; }
+}
+async function construirHtmlComSeed(seedObj){
+  const resp = await fetch(location.href, { cache: 'no-store' });
+  let html = await resp.text();
+  const payload = JSON.stringify(seedObj).replace(/</g, '\u003c');
+  const re = /(<script type="application\/json" id="seedData">)[\s\S]*?(<\/script>)/;
+  return html.replace(re, `$1${payload}$2`);
+}
+async function publicarAtualizacao(){
+  if(!artifactAvailable) return;
+  try{
+    const seedObj = { records: load(), updatedAt: new Date().toISOString() };
+    const html = await construirHtmlComSeed(seedObj);
+    await artifactNS.publish(html);
+  }catch(e){}
+}
+
 function toast(msg,type='ok'){
   const t=document.getElementById('toast');
   document.getElementById('toast-msg').textContent=msg;
@@ -1054,6 +1079,7 @@ function salvar(){
   const all=load();
   all.push(record);
   save(all);
+  publicarAtualizacao();
   toast('Apuração salva! Dashboard atualizado.');
   nav('dashboard');
 }
@@ -1258,6 +1284,7 @@ function renderHist(){
 
 function deleteRec(id){
   save(load().filter(r=>r.id!==id));
+  publicarAtualizacao();
   renderHist();
   renderDash();
   toast('Registro excluído','err');
@@ -1267,6 +1294,7 @@ function deleteRec(id){
 function openClear(){ document.getElementById('modal-bg').classList.add('open') }
 function confirmarLimpar(){
   localStorage.removeItem(KEY);
+  publicarAtualizacao();
   document.getElementById('modal-bg').classList.remove('open');
   toast('Dados limpos','err');
   renderDash();
@@ -1318,8 +1346,12 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   try{
     if(window.claude && typeof window.claude.use === 'function'){
       downloadsNS = await window.claude.use('downloads');
+      artifactNS = await window.claude.use('artifact');
+      artifactAvailable = !!artifactNS;
     }
-  }catch(e){ downloadsNS = null; }
+  }catch(e){ downloadsNS = null; artifactNS = null; artifactAvailable = false; }
+  const seed = lerSeed();
+  if(seed) save(seed.records);
   recalcSavedTotals();
   // Inicia cada aba com uma linha vazia
   for(let i=0;i<4;i++) sxAddRow(i);

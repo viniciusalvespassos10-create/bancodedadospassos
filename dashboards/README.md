@@ -24,9 +24,13 @@ Código-fonte dos painéis publicados como Claude Artifacts para a Vila Porto In
 
 ## Como funciona a sincronização
 
-O Faturamento, o Estoque Vila Velha e as Apurações de Serviços usam o recurso `artifact` do Claude (auto-publicação): ao importar dados novos ou editar a lista de clientes, a própria página busca seu HTML atual, atualiza o bloco `<script id="seedData">` com os dados novos e publica uma nova versão de si mesma. Assim, qualquer pessoa com o link vê os dados mais recentes ao abrir a página — sem precisar de login ou banco de dados externo.
+Todos os cinco painéis de dados (Faturamento, Estoque Vila Velha, Apurações de Serviços, Apuração Cacique e Apuração Olam) usam o recurso `artifact` do Claude (auto-publicação): a própria página busca seu HTML atual, atualiza o bloco `<script id="seedData">` com os dados novos e publica uma nova versão de si mesma. Assim, as alterações são salvas automaticamente — sem precisar clicar em "salvar" — e qualquer pessoa que abrir o link depois (inclusive após fechar e voltar) vê os dados mais recentes, sem precisar de login ou banco de dados externo.
 
-A Apuração Cacique e a Apuração Olam usam o recurso `downloads` (para exportar CSV/relatório) em vez do `artifact` — por isso não fazem auto-publicação de dados e, por decisão de escopo, não têm o link público "Anyone with the link" habilitado (as duas capacidades são mutuamente exclusivas na plataforma).
+- Faturamento, Estoque Vila Velha e Apurações de Serviços publicam a cada ação relevante do usuário (importar dados, editar um cliente, adicionar/remover).
+- Apuração Cacique publica ao salvar um snapshot, excluir um histórico, limpar dados, e também ao fechar/trocar de aba (para não perder o que foi digitado nas tabelas).
+- Apuração Olam publica ao salvar uma apuração, excluir um registro do histórico, ou limpar os dados.
+
+Apuração Cacique e Apuração Olam também usam o recurso `downloads` (para exportar CSV/relatório), além do `artifact`. Por decisão de escopo, essas duas continuam sem o link público "Anyone with the link" habilitado — a capacidade `downloads` bloqueia o compartilhamento público na plataforma, independente de o `artifact` estar presente.
 
 ## Publicar uma alteração
 
