@@ -373,6 +373,45 @@
     margin-left: 8px;
   }
   .zoom-reset:hover{ border-color:#4b5563; color: #fff; }
+
+  .lock-overlay{
+    display:none;
+    position: fixed;
+    inset: 0;
+    background: rgba(4,6,14,0.72);
+    z-index: 100;
+    align-items:center;
+    justify-content:center;
+    backdrop-filter: blur(2px);
+  }
+  .lock-box{
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 26px 24px;
+    width: 300px;
+    max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .lock-box .lock-ico{ font-size: 26px; text-align:center; margin-bottom: 6px; }
+  .lock-box h3{ font-size: 14px; font-weight: 800; text-align:center; margin-bottom: 4px; color:#fff; }
+  .lock-box .lock-sub{ font-size: 11.5px; color: var(--text-muted); text-align:center; margin-bottom: 12px; }
+  .lock-box .lock-note{ font-size: 10px; color:#6b7280; text-align:center; margin-bottom: 14px; line-height: 1.5; }
+  .lock-box input{
+    width:100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--panel-border);
+    background: #0d1320;
+    color: #fff;
+    font-size: 13px;
+    margin-bottom: 8px;
+    outline: none;
+  }
+  .lock-box input:focus{ border-color: var(--orange); }
+  .lock-error{ display:none; color:#f87171; font-size: 11px; margin-bottom: 10px; }
+  .lock-actions{ display:flex; gap:10px; margin-top: 4px; }
+  .lock-actions button{ flex:1; }
 </style>
 <script type="application/json" id="seedData">{}</script>
 <div class="zoom-wrapper" id="zoomWrapper">
@@ -394,7 +433,7 @@
     </div>
     <div class="tabs">
       <button class="tab-btn active" id="tabPainelBtn" onclick="mostrarAba('painel')">PAINEL</button>
-      <button class="tab-btn" id="tabEditarBtn" onclick="mostrarAba('editar')">EDITAR DADOS</button>
+      <button class="tab-btn" id="tabEditarBtn" onclick="abrirPortaoEditar()">🔒 EDITAR DADOS</button>
     </div>
   </header>
 
@@ -520,6 +559,21 @@
   <button class="zoom-reset" onclick="resetarZoom()">Redefinir</button>
 </div>
 
+<div class="lock-overlay" id="lockOverlay">
+  <div class="lock-box">
+    <div class="lock-ico">🔒</div>
+    <h3>Área restrita</h3>
+    <div class="lock-sub">Digite a senha para editar os dados do painel.</div>
+    <div class="lock-note">⚠ Controle de conveniência no navegador, não é autenticação real — não protege dados sensíveis.</div>
+    <input type="password" id="lockInput" placeholder="Senha" autocomplete="off" onkeydown="if(event.key==='Enter') validarSenhaEditar()">
+    <div class="lock-error" id="lockError">Senha incorreta. Tente novamente.</div>
+    <div class="lock-actions">
+      <button class="btn btn-secondary" onclick="fecharPortaoEditar()">Cancelar</button>
+      <button class="btn btn-primary" onclick="validarSenhaEditar()">Entrar</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const STORAGE_KEY = 'painelEstoqueVilaVelha';
 
@@ -607,6 +661,33 @@
   function formatarNumero(n){
     return Math.round(n).toLocaleString('pt-BR');
   }
+
+  // ── SENHA DE ACESSO — ABA EDITAR DADOS (controle de conveniência, não segurança real — ver aviso no modal) ──
+  const SENHA_EDITAR = 'vilaporto2026';
+  function abrirPortaoEditar(){
+    document.getElementById('lockError').style.display = 'none';
+    document.getElementById('lockInput').value = '';
+    document.getElementById('lockOverlay').style.display = 'flex';
+    setTimeout(() => document.getElementById('lockInput').focus(), 50);
+  }
+  function fecharPortaoEditar(){
+    document.getElementById('lockOverlay').style.display = 'none';
+  }
+  function validarSenhaEditar(){
+    const val = document.getElementById('lockInput').value;
+    if(val === SENHA_EDITAR){
+      document.getElementById('lockOverlay').style.display = 'none';
+      mostrarAba('editar');
+    } else {
+      document.getElementById('lockError').style.display = 'block';
+      document.getElementById('lockInput').value = '';
+      document.getElementById('lockInput').focus();
+    }
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    const ov = document.getElementById('lockOverlay');
+    if(ov) ov.addEventListener('click', (e) => { if(e.target.id === 'lockOverlay') fecharPortaoEditar(); });
+  });
 
   function mostrarAba(aba){
     document.getElementById('viewPainel').classList.toggle('active', aba === 'painel');
