@@ -59,6 +59,12 @@
   .model-textarea{width:100%;min-height:84px;resize:vertical;padding:9px 11px;border-radius:8px;border:1px solid var(--border-soft);background:var(--card-soft);color:var(--text);font-size:12.5px;font-family:inherit;line-height:1.5;outline:none;}
   .model-textarea:focus{border-color:var(--blue);}
   .model-textarea::placeholder{color:var(--text-faint);}
+  .link-row{display:flex;gap:8px;align-items:center;}
+  .link-input{flex:1;min-width:0;font-size:11.5px;color:var(--text);background:var(--card-soft);border:1px solid var(--border-soft);border-radius:8px;padding:7px 9px;outline:none;}
+  .link-input:focus{border-color:var(--blue);}
+  .link-input::placeholder{color:var(--text-faint);}
+  .open-link-btn{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:8px;background:var(--blue);color:#fff;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;}
+  .open-link-btn:hover{opacity:.88;}
   .empty-state{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--text-faint);font-size:13px;}
   .status-bar{margin-top:16px;font-size:11.5px;color:var(--green);font-weight:600;min-height:16px;}
   .sidebar-foot{display:flex;gap:9px;padding:24px 0 4px;border-top:1px solid var(--border-soft);color:var(--text-faint);font-size:11px;line-height:1.5;margin-top:14px;}
@@ -69,7 +75,7 @@
     .client-grid{grid-template-columns:1fr;}
   }
 </style>
-<script type="application/json" id="seedData">{}</script>
+<script type="application/json" id="seedData">{"clientes":[{"nome":"COMPANHIA CACIQUE DE CAFE SOLUVEL","modelo":"","link":"https://claude.ai/code/artifact/c8c6fd21-b70d-4cfb-b121-58f38b52fc36"},{"nome":"MICROWARE TECNOLOGIA DE INFORMACAO LTDA","modelo":""},{"nome":"MOT COMERCIO E IMPORTACAO LTDA","modelo":""},{"nome":"OLAM AGRICOLA LTDA.","modelo":""}],"updatedAt":"2026-09-04T13:32:34.022Z"}</script>
 <header>
   <div class="brand">
     <div class="brand-mark">VP</div>
@@ -133,30 +139,10 @@ function updateThemeIcon(theme){
 const STORAGE_KEY = 'vp_apuracoesServicos';
 
 let clientes = [
-  {nome:"777 DISTRIBUIDORA LTDA", modelo:""},
-  {nome:"A C P M SERVICOS E COMERCIO DE PRODUTOS DE INFORMATICA LTDA", modelo:""},
-  {nome:"ALDIO TRANSPORTES E LOGISTICA LTDA", modelo:""},
-  {nome:"ALPHA CAVE COMERCIO DE VINHOS LTDA", modelo:""},
-  {nome:"BILU - NEW IMPORTACAO E EXPORTACAO LTDA", modelo:""},
-  {nome:"COMPANHIA CACIQUE DE CAFE SOLUVEL", modelo:""},
-  {nome:"DUNE DO BRASIL COMERCIO EXTERIOR LTDA", modelo:""},
-  {nome:"EZESA BRASIL PARTICIPAÇÕES LTDA", modelo:""},
-  {nome:"GILFLEX COMERCIO E SERVICOS LTDA", modelo:""},
-  {nome:"GPA SUPLEMENTOS LTDA", modelo:""},
-  {nome:"GRUPO VILA PORTO", modelo:""},
-  {nome:"ILHA BRASIL COMERCIO LTDA", modelo:""},
-  {nome:"LIZENSK COMERCIO IMPORTACAO E EXPORTACAO LTDA", modelo:""},
+  {nome:"COMPANHIA CACIQUE DE CAFE SOLUVEL", modelo:"", link:"https://claude.ai/code/artifact/c8c6fd21-b70d-4cfb-b121-58f38b52fc36"},
   {nome:"MICROWARE TECNOLOGIA DE INFORMACAO LTDA", modelo:""},
   {nome:"MOT COMERCIO E IMPORTACAO LTDA", modelo:""},
-  {nome:"MR SOLDAS LTDA", modelo:""},
-  {nome:"OLAM AGRICOLA LTDA.", modelo:""},
-  {nome:"QUATTROR COMERCIAL LTDA", modelo:""},
-  {nome:"S & D TECNOLOGIA COMERCIO E SERVICOS DE INFORMATIC", modelo:""},
-  {nome:"SELLER TRADING LTDA", modelo:""},
-  {nome:"TEAM AIR SYSTEMS COMERCIO E IMPORTACAO LTDA", modelo:""},
-  {nome:"VCT BRASIL IMPORTACAO E EXPORTACAO LTDA", modelo:""},
-  {nome:"VILA PORTO INTERNATIONAL BUSINESS S/A", modelo:""},
-  {nome:"VILLA PIVA JUICE & FOODS LTDA", modelo:""}
+  {nome:"OLAM AGRICOLA LTDA.", modelo:""}
 ];
 
 // ── SINCRONIZAÇÃO ENTRE USUÁRIOS (Artifact self-publish, mesmo mecanismo dos outros painéis) ──
@@ -249,12 +235,22 @@ function renderClientes(){
       </div>
       <div class="field-label">Modelo de cobrança</div>
       <textarea class="model-textarea" placeholder="Descreva os serviços e valores combinados com este cliente..." oninput="editarModelo(${c.idx}, this.value, false)" onchange="editarModelo(${c.idx}, this.value, true)">${(c.modelo||'').replace(/</g,'&lt;')}</textarea>
+      <div class="field-label">Painel individual</div>
+      <div class="link-row">
+        <input class="link-input" type="url" placeholder="Colar link do painel deste cliente..." value="${(c.link||'').replace(/"/g,'&quot;')}" onchange="editarLink(${c.idx}, this.value)">
+        ${c.link ? `<a class="open-link-btn" href="${c.link.replace(/"/g,'&quot;')}" target="_blank" rel="noopener">Abrir →</a>` : ''}
+      </div>
     </div>
   `).join('');
 }
 
 function editarNome(i, valor){
   clientes[i].nome = valor;
+  flushPublicar();
+}
+function editarLink(i, valor){
+  clientes[i].link = valor.trim();
+  renderClientes();
   flushPublicar();
 }
 function editarModelo(i, valor, imediato){

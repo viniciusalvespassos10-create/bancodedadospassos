@@ -1,0 +1,1132 @@
+<title>Apuração Cacique</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#0d1117;color:#e6edf3;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+:root{
+  --dark:#0d1117;--dark2:#161b22;--dark3:#1c2128;--dark4:#21262d;
+  --green:#00c950;--green2:#26a641;--yellow:#f0b429;--orange:#f97316;
+  --blue:#58a6ff;--purple:#a78bfa;--teal:#34d399;
+  --text1:#e6edf3;--text2:#8b949e;--border:#30363d
+}
+.topbar{background:var(--dark2);border-bottom:1px solid var(--border);padding:0 20px;height:50px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:10px}
+.logo img{height:36px;width:auto;border-radius:4px}
+.logo-title{font-weight:700;font-size:13px}
+.topbar-btns{display:flex;gap:8px}
+.btn{padding:6px 13px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--dark3);color:var(--text1);font-family:Arial,sans-serif;text-decoration:none;display:inline-flex;align-items:center;transition:all .12s}
+.btn:hover{background:var(--dark4)}
+.btn-green{background:#1a3a28;border-color:var(--green2);color:var(--green)}
+.btn-green:hover{background:#1f4a30}
+.btn-danger-confirm{background:#3a1a1a!important;border-color:#f85149!important;color:#f85149!important}
+.main{display:flex;flex:1;overflow:hidden}
+.sidebar{width:190px;background:var(--dark2);border-right:1px solid var(--border);padding:16px 0;flex-shrink:0}
+.nav-label{font-size:10px;color:var(--text2);padding:0 16px;margin-bottom:8px;letter-spacing:.08em;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:8px;padding:9px 16px;font-size:13px;cursor:pointer;color:var(--text2);border-left:2px solid transparent;user-select:none}
+.nav-item:hover{background:var(--dark3);color:var(--text1)}
+.nav-item.active{background:var(--dark3);color:var(--text1);border-left-color:var(--green)}
+.content{flex:1;overflow-y:auto;padding:20px}
+.page{display:none}.page.active{display:block}
+
+.client-header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.client-logo{background:#fff;border-radius:8px;padding:6px 10px}
+.client-logo img{height:46px;width:auto;display:block}
+.page-title{font-size:20px;font-weight:700}
+.period-tag{font-size:11px;color:var(--text2);margin-top:3px}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:12px}
+.kpi-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.kpi-val{font-size:18px;font-weight:700}
+.kpi-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.kpi.g{border-top:2px solid var(--green)}.kpi.b{border-top:2px solid var(--blue)}
+.kpi.y{border-top:2px solid var(--yellow)}.kpi.o{border-top:2px solid var(--orange)}.kpi.p{border-top:2px solid var(--purple)}
+.g .kpi-val{color:var(--green)}.b .kpi-val{color:var(--blue)}.y .kpi-val{color:var(--yellow)}.o .kpi-val{color:var(--orange)}.p .kpi-val{color:var(--purple)}
+
+.section{background:var(--dark2);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden}
+.sec-hdr{padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.07em;color:var(--text2);display:flex;justify-content:space-between;align-items:center;text-transform:uppercase}
+.sec-hdr .v{color:var(--text1);font-size:13px;text-transform:none}
+
+table.srv{width:100%;border-collapse:collapse;font-size:12px}
+table.srv th{padding:8px 10px;color:var(--text2);font-weight:600;text-align:left;background:var(--dark3);font-size:11px;text-transform:uppercase}
+table.srv td{padding:8px 10px;border-top:1px solid var(--border)}
+table.srv tr.tot td{background:var(--dark3);font-weight:700}
+.r{text-align:right}
+
+.bar-wrap{padding:14px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px}
+.bar-lbl{width:130px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.bar-trk{flex:1;background:var(--dark4);border-radius:3px;height:6px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px}
+.bar-num{width:95px;text-align:right;font-size:11px;flex-shrink:0}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.si{display:flex;justify-content:space-between;padding:7px 14px;font-size:12px;border-top:1px solid var(--border)}
+.si:first-child{border-top:none}
+.si .lbl{color:var(--text2)}
+.si.hl{background:var(--dark3)}
+.si.hl .val{color:var(--yellow);font-weight:700}
+
+.fsec{background:var(--dark2);border:1px solid var(--border);border-radius:8px;margin-bottom:12px}
+.ftitle{padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.07em}
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg.s2{grid-column:span 2}.fg.s3{grid-column:span 3}
+.fl{font-size:11px;color:var(--text2)}
+input.fi{background:var(--dark3);border:1px solid var(--border);border-radius:6px;padding:7px 9px;font-size:12px;color:var(--text1);outline:none;font-family:Arial,sans-serif;width:100%}
+input.fi:focus{border-color:var(--green)}
+input.fi.calc{background:rgba(240,180,41,.08);border-color:rgba(240,180,41,.3);color:var(--yellow)}
+input.fi.ro{color:var(--text2);background:var(--dark4)}
+
+table.et{width:100%;border-collapse:collapse;font-size:11px}
+table.et th{padding:7px 10px;background:var(--dark3);color:var(--text2);text-align:left;font-weight:600;font-size:10px;text-transform:uppercase}
+table.et td{padding:5px 8px;border-top:1px solid var(--border)}
+table.et tr.tr td{background:var(--dark3);font-weight:700;color:var(--teal)}
+table.et input{background:var(--dark4);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:11px;color:var(--text1);font-family:Arial,sans-serif}
+table.et input.calc{background:rgba(240,180,41,.08);border-color:rgba(240,180,41,.3);color:var(--yellow)}
+table.et input.ro{color:var(--text2)}
+
+.hist-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-top:1px solid var(--border);font-size:12px}
+.hist-row:hover{background:var(--dark3)}
+.hist-row:first-child{border-top:none}
+.hm{color:var(--text2);font-size:11px;margin-top:2px}
+.hv{font-weight:700;color:var(--green)}
+.notice{font-size:11px;color:var(--green);padding:6px 12px;background:rgba(0,201,80,.1);border:1px solid var(--green2);border-radius:6px;margin-bottom:10px;display:none}
+.del-btn{background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;padding:2px 6px;line-height:1}
+.del-btn:hover{color:var(--red,#f85149)}
+</style>
+<div class="topbar">
+  <div class="logo">
+    <img id="logo-vp" src="data:image/png;base64,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" alt="Grupo Vila Porto">
+    <span class="logo-title">Sistema de Apuração de Serviços</span>
+  </div>
+  <div class="topbar-btns">
+    <a class="btn" href="https://claude.ai/code/artifact/8276edd7-6693-42a3-ae15-cebce9e7eb29">↩ Apurações</a>
+    <a class="btn" href="https://claude.ai/code/artifact/a2f16c2a-b621-4e3d-8b7c-670900dd50ba">🏠 Menu Principal</a>
+    <button class="btn" onclick="gerarPDF()">⬇ Gerar PDF</button>
+    <button class="btn" onclick="exportCSV()">↓ Exportar CSV</button>
+    <button class="btn" id="btn-clearall" onclick="clearAll()">🗑 Limpar Tudo</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="nav-label">Navegação</div>
+    <div class="nav-item active" id="nav-dashboard" onclick="nav('dashboard')">▦ &nbsp; Dashboard</div>
+    <div class="nav-item" id="nav-lancar" onclick="nav('lancar')">＋ &nbsp; Lançar Apuração</div>
+    <div class="nav-item" id="nav-historico" onclick="nav('historico')">◷ &nbsp; Histórico</div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div class="client-header">
+        <div class="client-logo" style="display:flex;align-items:center;justify-content:center;min-width:80px;min-height:46px">
+          <img id="logo-cac" src="data:image/png;base64,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" alt="Cacique" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div style="display:none;flex-direction:column;align-items:center;justify-content:center;width:70px;height:46px;background:#1a3a28;border-radius:4px">
+            <span style="font-size:10px;font-weight:700;color:var(--green);letter-spacing:.05em">CACIQUE</span>
+            <span style="font-size:8px;color:var(--text2)">by LDC</span>
+          </div>
+        </div>
+        <div>
+          <div class="page-title">Cliente</div>
+          <div class="period-tag" id="dash-periodo">—</div>
+        </div>
+      </div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="kpi g"><div class="kpi-label">Valor Total</div><div class="kpi-val" id="kpi-total">R$ 0,00</div><div class="kpi-sub">valor total</div></div>
+        <div class="kpi b"><div class="kpi-label">Recebimento</div><div class="kpi-val" id="kpi-receb">R$ 0,00</div><div class="kpi-sub" id="kpi-receb-sub">0 un.</div></div>
+        <div class="kpi y"><div class="kpi-label">Armazenagem</div><div class="kpi-val" id="kpi-arm">R$ 0,00</div><div class="kpi-sub" id="kpi-arm-sub">0 un.</div></div>
+        <div class="kpi o"><div class="kpi-label">Seguro</div><div class="kpi-val" id="kpi-seg">R$ 0,00</div><div class="kpi-sub">0,20% da base</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div class="section">
+          <div class="sec-hdr">Composição do Total <span class="v" id="comp-total"></span></div>
+          <div class="bar-wrap" id="bar-chart"></div>
+        </div>
+        <div class="section">
+          <div class="sec-hdr">Resumo por Serviço</div>
+          <table class="srv">
+            <thead><tr><th>Serviço</th><th class="r">Qtd</th><th class="r">Tarifa</th><th class="r">R$</th></tr></thead>
+            <tbody id="resumo-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="section"><div class="sec-hdr">Descargas / Recebimento</div><div id="box-desc"></div></div>
+        <div class="section"><div class="sec-hdr">Armazenagem</div><div id="box-arm"></div></div>
+      </div>
+      <div id="dash-med-panel" style="display:none;margin-bottom:12px">
+        <div class="section">
+          <div class="sec-hdr">Resultado da Mediação</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+
+            <!-- COLUNA ESQUERDA: Quinzenas -->
+            <div style="border-right:1px solid var(--border)">
+              <div style="padding:8px 14px;background:var(--dark3);border-bottom:1px solid var(--border)">
+                <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text2)">Serviços Apurados</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px">
+                <span style="color:var(--text2)">Valor 1ª quinzena</span>
+                <span id="dm-q1" style="font-weight:700;color:var(--blue)">R$ 0,00</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px">
+                <span style="color:var(--text2)">Valor 2ª quinzena</span>
+                <span id="dm-q2" style="font-weight:700;color:var(--blue)">R$ 0,00</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--dark4);font-size:12px">
+                <span style="color:var(--text2);font-weight:700">Soma das duas Quinzenas</span>
+                <span id="dm-total" style="font-size:14px;font-weight:700;color:var(--purple)">R$ 0,00</span>
+              </div>
+            </div>
+
+            <!-- COLUNA DIREITA: Faturamento Mínimo -->
+            <div>
+              <div style="padding:8px 14px;background:var(--dark3);border-bottom:1px solid var(--border)">
+                <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text2)">Faturamento Mínimo</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px">
+                <span style="color:var(--text2)">Faturamento mínimo mensal</span>
+                <span id="dm-fatmin" style="font-weight:700;color:var(--text1)">R$ 0,00</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px">
+                <span style="color:var(--text2)">ISS ( 5,00% )</span>
+                <span id="dm-iss5" style="color:var(--text2)">R$ 0,00</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--dark4);font-size:12px">
+                <span style="color:var(--text2);font-weight:700">Faturamento mínimo total</span>
+                <span id="dm-fatmin-total" style="font-size:14px;font-weight:700;color:var(--yellow)">R$ 0,00</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- LINHA INFERIOR: Valor da Mediação + Saldo -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:2px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-right:1px solid var(--border);background:var(--dark3)">
+              <div>
+                <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Valor da Mediação</div>
+                <div style="font-size:10px;color:var(--text2)">(Fat. mín. total − Soma quinzenas)</div>
+              </div>
+              <span id="dm-valmed" style="font-size:16px;font-weight:700;color:var(--teal)">R$ 0,00</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--dark3)">
+              <div>
+                <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Saldo para Faturamento</div>
+                <div style="font-size:10px;color:var(--text2)">(2ª quinzena + Valor da mediação)</div>
+              </div>
+              <span id="dm-saldo" style="font-size:18px;font-weight:700">R$ 0,00</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- LANÇAR -->
+    <div id="page-lancar" class="page">
+      <div class="page-title">Lançar Apuração</div>
+      <div class="period-tag" style="margin-bottom:10px">Campos amarelos são calculados automaticamente · dados salvos no navegador</div>
+      <div id="notice" class="notice">✓ Salvo automaticamente</div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
+        <button class="btn" id="btn-limparform" onclick="limparForm()">Limpar Lançamentos</button>
+        <button class="btn btn-green" onclick="salvarSnapshot()">✓ Salvar no Histórico</button>
+      </div>
+
+      <div class="fsec">
+        <div class="ftitle">Informações da Apuração</div>
+        <div class="fgrid">
+          <div class="fg s2"><div class="fl">Cliente</div><input class="fi" id="f-cliente" placeholder="Nome do cliente" oninput="autoSave()"></div>
+          <div class="fg"><div class="fl">CNPJ</div><input class="fi" id="f-cnpj" placeholder="00.000.000/0000-00" oninput="autoSave()"></div>
+          <div class="fg s3"><div class="fl">Período</div><input class="fi" id="f-periodo" placeholder="01/04/2026 a 15/04/2026" oninput="autoSave()"></div>
+        </div>
+      </div>
+
+      <div class="fsec">
+        <div class="ftitle">Descargas (Recebimento) — Tarifa R$ 25,00/un.</div>
+        <div style="padding:12px 14px">
+          <table class="et">
+            <thead><tr><th>Data</th><th>Documento</th><th>Qtd</th><th>Tarifa R$</th><th>Valor R$</th><th></th></tr></thead>
+            <tbody id="tbody-desc"></tbody>
+            <tfoot><tr class="tr"><td colspan="2">TOTAL</td><td id="d-qtd">0</td><td></td><td id="d-val">R$ 0,00</td><td></td></tr></tfoot>
+          </table>
+          <button class="btn" style="margin-top:8px" onclick="addRow('D')">+ Lançar Remessa</button>
+        </div>
+      </div>
+
+      <div class="fsec">
+        <div class="ftitle">Armazenagem — Tarifa R$ 40,00/un.</div>
+        <div style="padding:12px 14px">
+          <table class="et">
+            <thead><tr><th>Tipo</th><th>Data</th><th>Documento / Nota</th><th>Qtd Pallets</th><th>Tarifa R$</th><th>Saldo</th><th></th></tr></thead>
+            <tbody id="tbody-arm"></tbody>
+            <tfoot><tr class="tr"><td colspan="3">TOTAL</td><td id="a-qtd">0</td><td></td><td id="a-saldo">0</td><td></td></tr></tfoot>
+          </table>
+          <div style="display:flex;gap:4px;margin-top:6px;font-size:11px;color:var(--text2);align-items:center">
+            <span>Valor cobrado sobre saldo final:</span>
+            <span id="a-val" style="color:var(--yellow);font-weight:700">R$ 0,00</span>
+            <span>(saldo × R$ 40,00)</span>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-green" onclick="addRow('AE')">+ Entrada</button>
+            <button class="btn" style="border-color:var(--orange);color:var(--orange)" onclick="addRow('AS')">− Saída</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="fsec">
+        <div class="ftitle">Seguro — Alíquota 0,20%</div>
+        <div style="padding:12px 14px">
+          <table class="et">
+            <thead><tr><th>Tipo</th><th>Data</th><th>Documento</th><th>Valor Nota R$</th><th>Alíquota</th><th>Saldo Base R$</th><th></th></tr></thead>
+            <tbody id="tbody-seg"></tbody>
+            <tfoot><tr class="tr"><td colspan="3">TOTAL BASE</td><td id="s-base">R$ 0,00</td><td>0,20%</td><td id="s-saldo">R$ 0,00</td><td></td></tr></tfoot>
+          </table>
+          <div style="display:flex;gap:4px;margin-top:6px;font-size:11px;color:var(--text2);align-items:center">
+            <span>Valor cobrado sobre saldo final:</span>
+            <span id="s-val" style="color:var(--yellow);font-weight:700">R$ 0,00</span>
+            <span>(saldo × 0,20%)</span>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-green" onclick="addRow('SE')">+ Entrada (Nota)</button>
+            <button class="btn" style="border-color:var(--orange);color:var(--orange)" onclick="addRow('SS')">− Saída (Nota)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="fsec">
+        <div class="ftitle">Outros Serviços</div>
+        <div class="fgrid">
+          <div class="fg"><div class="fl">Separação / Expedição — Qtd (Tarifa R$ 25,00)</div><input class="fi" id="f-stretch" type="number" min="0" value="0" oninput="calcOthers()"></div>
+          <div class="fg"><div class="fl">Valor Separação / Expedição</div><input class="fi calc" id="v-stretch" readonly></div>
+          <div class="fg"></div>
+          <div class="fg"></div>
+          <div class="fg"><div class="fl">Faturamento Mínimo Mensal R$</div><input class="fi" id="f-fatmin" type="number" min="0" value="50000" oninput="calcRes()"></div>
+          <div class="fg"><div class="fl">ISS aplicado</div><input class="fi ro" readonly value="5,00%"></div>
+        </div>
+      </div>
+
+      <div class="fsec">
+        <div class="ftitle">Resumo da Apuração</div>
+        <div class="fgrid">
+          <div class="fg"><div class="fl">Total Recebimento</div><input class="fi calc" id="r-receb" readonly></div>
+          <div class="fg"><div class="fl">Total Armazenagem</div><input class="fi calc" id="r-arm" readonly></div>
+          <div class="fg"><div class="fl">Total Seguro</div><input class="fi calc" id="r-seg" readonly></div>
+          <div class="fg"><div class="fl">Separação / Expedição</div><input class="fi calc" id="r-stretch" readonly></div>
+          <div class="fg"><div class="fl">Valor CRC</div><input class="fi calc" id="r-crc" readonly></div>
+          <div class="fg"><div class="fl">CRC + ISS 5%</div><input class="fi calc" id="r-crciss" readonly></div>
+          <div class="fg"><div class="fl">Fat. Mínimo + ISS</div><input class="fi calc" id="r-fatiss" readonly></div>
+          <div class="fg"><div class="fl" style="color:var(--green);font-weight:700">TOTAL FINAL</div><input class="fi calc" id="r-total" readonly style="font-size:14px;font-weight:700;border-color:var(--green2)"></div>
+        </div>
+      </div>
+      <div class="fsec" id="sec-med">
+        <div class="ftitle" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Medição Quinzenal / Faturamento Mínimo</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <label style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="med-dash-toggle" onchange="toggleMedDash()" style="width:14px;height:14px;accent-color:var(--green)">
+              Exibir no Dashboard
+            </label>
+            <button class="btn" style="font-size:11px;padding:4px 10px" onclick="toggleMedAtivo()">
+              <span id="med-ativo-label">▶ Ativar Medição</span>
+            </button>
+          </div>
+        </div>
+        <div id="med-body" style="display:none;padding:14px">
+          <div class="fgrid">
+            <div class="fg"><div class="fl">Mês de Referência</div><input class="fi" id="med-periodo" placeholder="Ex: Fevereiro/2026" oninput="updMed()"></div>
+            <div class="fg"><div class="fl">Valor 1ª quinzena R$</div><input class="fi" id="med-q1" type="number" value="0" oninput="updMed()"></div>
+            <div class="fg"><div class="fl">Valor 2ª quinzena R$</div><input class="fi" id="med-q2" type="number" value="0" oninput="updMed()"></div>
+          </div>
+          <div style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:12px">
+            <div style="padding:8px 14px;border-bottom:1px solid var(--border)">
+              <span style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Resultado da Medição</span>
+            </div>
+
+            <!-- Grid 2 colunas -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+
+              <!-- Esq: Serviços Apurados -->
+              <div style="border-right:1px solid var(--border)">
+                <div style="padding:6px 14px;background:var(--dark4);border-bottom:1px solid var(--border)">
+                  <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2)">Serviços Apurados</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px">
+                  <span style="color:var(--text2)">Valor 1ª quinzena</span>
+                  <span id="med-q1-label" style="color:var(--blue);font-weight:600">R$ 0,00</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px">
+                  <span style="color:var(--text2)">Valor 2ª quinzena</span>
+                  <span id="med-q2-label" style="color:var(--blue);font-weight:600">R$ 0,00</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:9px 14px;font-size:12px;background:rgba(167,139,250,.06)">
+                  <span style="color:var(--text2);font-weight:700">Soma das duas Quinzenas</span>
+                  <span id="med-total-quinz" style="font-size:14px;font-weight:700;color:var(--purple)">R$ 0,00</span>
+                </div>
+              </div>
+
+              <!-- Dir: Faturamento Mínimo -->
+              <div>
+                <div style="padding:6px 14px;background:var(--dark4);border-bottom:1px solid var(--border)">
+                  <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2)">Faturamento Mínimo</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px">
+                  <span style="color:var(--text2)">Faturamento mínimo mensal</span>
+                  <span id="med-fatmin-val" style="font-weight:700;color:var(--text1)">R$ 0,00</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px">
+                  <span style="color:var(--text2)">ISS ( 5,00% )</span>
+                  <span id="med-iss-val" style="color:var(--text2)">R$ 0,00</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:9px 14px;font-size:12px;background:rgba(240,180,41,.06)">
+                  <span style="color:var(--text2);font-weight:700">Faturamento mínimo total</span>
+                  <span id="med-fatmin-iss" style="font-size:14px;font-weight:700;color:var(--yellow)">R$ 0,00</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Linha inferior: Valor da Mediação + Saldo -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:2px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-right:1px solid var(--border)">
+                <div>
+                  <div style="font-size:11px;color:var(--text2);font-weight:700;margin-bottom:2px">Valor da Mediação</div>
+                  <div style="font-size:10px;color:var(--text2)">(Fat. mín. total − Soma quinzenas)</div>
+                </div>
+                <span id="med-valmed" style="font-size:16px;font-weight:700;color:var(--teal)">R$ 0,00</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--dark4)">
+                <div>
+                  <div style="font-size:11px;font-weight:700;margin-bottom:2px">Saldo para Faturamento</div>
+                  <div style="font-size:10px;color:var(--text2)">(2ª quinzena + Valor da mediação)</div>
+                </div>
+                <span id="med-saldo" style="font-size:18px;font-weight:700">R$ 0,00</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div id="page-historico" class="page">
+      <div class="page-title">Histórico de Apurações</div>
+      <div class="period-tag" style="margin-bottom:14px">Snapshots salvos pelo botão "Salvar no Histórico" · clique em um registro para expandir</div>
+      <div class="section"><div id="hist-list"><div style="padding:24px;text-align:center;color:var(--text2)">Nenhum snapshot salvo ainda.</div></div></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+var KEY = 'ofi_sys_v2';
+
+var DEF = {
+  cliente: 'COMPANHIA CACIQUE DE CAFÉ SOLUVEL',
+  cnpj: '78.588.415/009-16',
+  periodo: '01/04/2026 a 15/04/2026',
+  descargas: [
+    {data:'25/03/2026', doc:'10591', qtd:28, tarifa:25},
+    {data:'26/03/2026', doc:'10601', qtd:27, tarifa:25},
+    {data:'27/03/2026', doc:'10614', qtd:23, tarifa:25}
+  ],
+  arm: [
+    {data:'Saldo Inicial', doc:'—', qtd:186, tarifa:40, si:true, tipo:'E'},
+    {data:'25/03/2026', doc:'10591', qtd:28, tarifa:40, tipo:'E'},
+    {data:'26/03/2026', doc:'10601', qtd:27, tarifa:40, tipo:'E'},
+    {data:'27/03/2026', doc:'10614', qtd:23, tarifa:40, tipo:'E'}
+  ],
+  seg: [
+    {data:'Saldo Inicial', doc:'—', nota:367379.57, al:0.002, si:true, tipo:'E'},
+    {data:'25/03/2026', doc:'—', nota:61555.2,   al:0.002, tipo:'E'},
+    {data:'26/03/2026', doc:'—', nota:57158.4,   al:0.002, tipo:'E'},
+    {data:'27/03/2026', doc:'—', nota:325228,    al:0.002, tipo:'E'}
+  ],
+  stretch: 0, fatmin: 50000,
+  med: {
+    ativo: false,
+    mostrarDash: false,
+    quinzena1: 0,
+    quinzena2: 0,
+    periodoRef: 'Fevereiro/2026'
+  },
+  historico: []
+};
+
+function loadState() {
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(DEF));
+}
+
+var S = loadState();
+
+function persist() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {}
+}
+
+var noticeTimer = null;
+function showNotice(msg) {
+  var n = document.getElementById('notice');
+  if (!n) return;
+  n.textContent = msg || '✓ Salvo automaticamente';
+  n.style.display = 'block';
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(function(){ n.style.display = 'none'; }, 2000);
+}
+
+function autoSave() {
+  S.cliente  = document.getElementById('f-cliente').value;
+  S.cnpj     = document.getElementById('f-cnpj').value;
+  S.periodo  = document.getElementById('f-periodo').value;
+  persist();
+  showNotice();
+}
+
+// ---- NAVIGATION ----
+function nav(page) {
+  ['dashboard','lancar','historico'].forEach(function(p) {
+    document.getElementById('page-' + p).classList.remove('active');
+    document.getElementById('nav-' + p).classList.remove('active');
+  });
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+  if (page === 'dashboard') renderDash();
+  if (page === 'lancar')    renderForms();
+  if (page === 'historico') renderHist();
+}
+
+// ---- CALCULATIONS ----
+var BRL = function(v) {
+  return 'R$ ' + (v||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+};
+
+function cD() {
+  var q=0, v=0;
+  S.descargas.forEach(function(d){ q+=d.qtd; v+=d.qtd*d.tarifa; });
+  return {q:q, v:v};
+}
+function cA() {
+  var sl=0;
+  S.arm.forEach(function(d){
+    if (d.si) { sl=d.qtd; }
+    else if (d.tipo==='S') { sl-=d.qtd; }
+    else { sl+=d.qtd; }
+  });
+  var v = sl * 40;
+  return {sl:sl, v:v};
+}
+function cS() {
+  var sl=0;
+  S.seg.forEach(function(d){
+    if (d.si) { sl=d.nota; }
+    else if (d.tipo==='S') { sl-=d.nota; }
+    else { sl+=d.nota; }
+  });
+  var v = sl * 0.002;
+  return {b:sl, v:v, sl:sl};
+}
+function cAll() {
+  var d=cD(), a=cA(), sg=cS();
+  var st=S.stretch*25, es=0;
+  var crc=d.v+a.v+sg.v+st+es;
+  var iss=crc*0.05, crcIss=crc+iss, fatIss=(S.fatmin/0.95)*0.05+S.fatmin;
+  return {d:d, a:a, sg:sg, st:st, es:es, crc:crc, iss:iss, crcIss:crcIss, fatIss:fatIss, total:Math.max(crcIss,fatIss)};
+}
+
+// ---- DASHBOARD ----
+function renderDash() {
+  var c = cAll();
+  document.getElementById('dash-periodo').textContent = S.cliente + ' · ' + S.periodo;
+  document.getElementById('kpi-total').textContent   = BRL(c.crc);
+  document.getElementById('kpi-receb').textContent   = BRL(c.d.v);
+  document.getElementById('kpi-receb-sub').textContent = c.d.q + ' un.';
+  document.getElementById('kpi-arm').textContent     = BRL(c.a.v);
+  document.getElementById('kpi-arm-sub').textContent = c.a.sl + ' un.';
+  document.getElementById('kpi-seg').textContent     = BRL(c.sg.v);
+  var km = document.getElementById('kpi-merc'); if(km) km.textContent = BRL(c.sg.sl);
+  document.getElementById('comp-total').textContent  = BRL(c.crc);
+
+  var bars = [
+    ['Recebimento',  c.d.v,  'var(--blue)'],
+    ['Armazenagem',  c.a.v,  'var(--yellow)'],
+    ['Seguro',       c.sg.v, 'var(--orange)'],
+    ['Sep. / Expedição', c.st,   'var(--teal)']
+  ];
+  var mx = Math.max.apply(null, bars.map(function(b){return b[1];}));
+  mx = mx || 1;
+  document.getElementById('bar-chart').innerHTML = bars.map(function(b){
+    var pct = Math.max(2, b[1]/mx*100).toFixed(1);
+    return '<div class="bar-row">' +
+      '<div class="bar-lbl">' + b[0] + '</div>' +
+      '<div class="bar-trk"><div class="bar-fill" style="width:'+pct+'%;background:'+b[2]+'"></div></div>' +
+      '<div class="bar-num" style="color:'+b[2]+'">' + BRL(b[1]) + '</div>' +
+    '</div>';
+  }).join('');
+
+  var rows = [
+    ['Recebimento',          c.d.q,    'R$ 25,00', c.d.v],
+    ['Armazenagem',          c.a.sl,   'R$ 40,00', c.a.v],
+    ['Seguro',               c.sg.sl,  '0,20%',    c.sg.v],
+    ['Sep. / Expedição',     S.stretch,'R$ 25,00', c.st]
+  ];
+  document.getElementById('resumo-body').innerHTML =
+    rows.map(function(r, i){
+      var qtd = (i === 2) ? BRL(r[1]) : r[1];
+      return '<tr><td>'+r[0]+'</td><td class="r">'+qtd+'</td><td class="r">'+r[2]+'</td><td class="r" style="color:var(--green)">'+BRL(r[3])+'</td></tr>';
+    }).join('') +
+    '<tr class="tot"><td colspan="3">TOTAL</td><td class="r">'+BRL(c.crc)+'</td></tr>';
+
+  var sldInicial=0, entradas=0, saidas=0, sldFinal=0;
+  S.arm.forEach(function(d,i){
+    if(d.si){ sldInicial=d.qtd; sldFinal=d.qtd; }
+    else if(d.tipo==='S'){ saidas+=d.qtd; sldFinal-=d.qtd; }
+    else { entradas+=d.qtd; sldFinal+=d.qtd; }
+  });
+  document.getElementById('box-desc').innerHTML =
+    '<div class="si"><span class="lbl">Total Descarregado</span><span class="val">'+c.d.q+' un.</span></div>' +
+    '<div class="si"><span class="lbl">Tarifa Unitária</span><span class="val">R$ 25,00</span></div>' +
+    '<div class="si hl"><span class="lbl">Total Recebimento</span><span class="val">'+BRL(c.d.v)+'</span></div>';
+  document.getElementById('box-arm').innerHTML =
+    '<div class="si"><span class="lbl">Saldo Inicial</span><span class="val">'+sldInicial+' un.</span></div>' +
+    '<div class="si"><span class="lbl" style="color:var(--green)">Entradas</span><span class="val" style="color:var(--green)">+'+entradas+' un.</span></div>' +
+    '<div class="si"><span class="lbl" style="color:var(--orange)">Saídas</span><span class="val" style="color:var(--orange)">-'+saidas+' un.</span></div>' +
+    '<div class="si"><span class="lbl">Saldo Final</span><span class="val">'+sldFinal+' un.</span></div>' +
+    '<div class="si hl"><span class="lbl">Total Armazenagem</span><span class="val">'+BRL(c.a.v)+'</span></div>';
+
+  // painel medição no dashboard
+  if (!S.med) S.med = {ativo:false,mostrarDash:false,quinzena1:0,quinzena2:0,periodoRef:''};
+  var mp = document.getElementById('dash-med-panel');
+  if (mp) mp.style.display = (S.med.ativo && S.med.mostrarDash) ? 'block' : 'none';
+  var q1    = S.med.quinzena1 || 0;
+  var q2    = S.med.quinzena2 || 0;
+  var total = q1 + q2;
+  var fatMin = S.fatmin || 50000;
+  var iss5   = (fatMin/0.95)*0.05;
+  var fatIss = fatMin + iss5;
+  var valMed = fatIss - total;          // Valor da mediação
+  var saldo  = q2 + valMed;             // Saldo = 2ª quinzena + valor da mediação
+  var dq1 = document.getElementById('dm-q1');           if(dq1) dq1.textContent = BRL(q1);
+  var dq2 = document.getElementById('dm-q2');           if(dq2) dq2.textContent = BRL(q2);
+  var dt  = document.getElementById('dm-total');        if(dt)  dt.textContent  = BRL(total);
+  var dfm = document.getElementById('dm-fatmin');       if(dfm) dfm.textContent = BRL(fatMin);
+  var di5 = document.getElementById('dm-iss5');         if(di5) di5.textContent = BRL(iss5);
+  var dft = document.getElementById('dm-fatmin-total'); if(dft) dft.textContent = BRL(fatIss);
+  var dvm = document.getElementById('dm-valmed');
+  if (dvm) { dvm.textContent = BRL(valMed); dvm.style.color = valMed >= 0 ? 'var(--teal)' : 'var(--green)'; }
+  var ds  = document.getElementById('dm-saldo');
+  if (ds) { ds.textContent = BRL(saldo); ds.style.color = saldo > 0 ? 'var(--orange)' : 'var(--green)'; }
+}
+
+// ---- FORMS ----
+function renderForms() {
+  document.getElementById('f-cliente').value = S.cliente;
+  document.getElementById('f-cnpj').value    = S.cnpj;
+  document.getElementById('f-periodo').value = S.periodo;
+  document.getElementById('f-stretch').value = S.stretch;
+  document.getElementById('f-fatmin').value  = S.fatmin;
+  // load medicao
+  if (!S.med) S.med = {ativo:false,mostrarDash:false,quinzena1:0,quinzena2:0,periodoRef:''};
+  document.getElementById('med-periodo').value = S.med.periodoRef || '';
+  document.getElementById('med-q1').value = S.med.quinzena1 || 0;
+  document.getElementById('med-q2').value = S.med.quinzena2 || 0;
+  document.getElementById('med-dash-toggle').checked = !!S.med.mostrarDash;
+  document.getElementById('med-body').style.display = S.med.ativo ? 'block' : 'none';
+  document.getElementById('med-ativo-label').textContent = S.med.ativo ? '⏸ Desativar Medição' : '▶ Ativar Medição';
+  updMed();
+  renderDesc(); renderArm(); renderSeg(); calcOthers();
+}
+
+function mkInput(w, val, extra) {
+  return '<input style="width:'+w+'px" value="'+val+'"' + (extra||'') + '>';
+}
+function mkCalc(w, val) {
+  return '<input class="calc" style="width:'+w+'px" value="'+val+'" readonly>';
+}
+
+function renderDesc() {
+  var html = '';
+  S.descargas.forEach(function(d, i) {
+    html += '<tr>' +
+      '<td>' + mkInput(88, d.data, ' oninput="S.descargas['+i+'].data=this.value;persist()"') + '</td>' +
+      '<td>' + mkInput(68, d.doc,  ' oninput="S.descargas['+i+'].doc=this.value;persist()"')  + '</td>' +
+      '<td><input type="number" style="width:72px" value="'+d.qtd+'" oninput="S.descargas['+i+'].qtd=+this.value;updD()"></td>' +
+      '<td>' + mkCalc(70, 'R$ 25,00') + '</td>' +
+      '<td>' + mkCalc(85, BRL(d.qtd*d.tarifa)) + '</td>' +
+      '<td><button class="del-btn" onclick="delRow(\'D\','+i+')">✕</button></td>' +
+    '</tr>';
+  });
+  document.getElementById('tbody-desc').innerHTML = html;
+  updD();
+}
+function updD() {
+  var q=0, v=0;
+  S.descargas.forEach(function(d){ q+=d.qtd; v+=d.qtd*d.tarifa; });
+  document.getElementById('d-qtd').textContent = q;
+  document.getElementById('d-val').textContent = BRL(v);
+  persist(); calcRes();
+}
+
+function renderArm() {
+  var html = '', sl = 0;
+  S.arm.forEach(function(d, i) {
+    if (d.si) { sl = d.qtd; }
+    else { sl = d.tipo === 'S' ? sl - d.qtd : sl + d.qtd; }
+    var tipo = d.si ? '<span style="font-size:10px;color:var(--text2)">Saldo Inicial</span>' :
+      d.tipo === 'E'
+        ? '<span style="background:#1a3a28;color:var(--green);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px">ENTRADA</span>'
+        : '<span style="background:#3a1a1a;color:var(--orange);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px">SAÍDA</span>';
+    var ro  = d.si ? ' class="ro" readonly' : '';
+    var ev  = d.si ? '' : ' oninput="S.arm['+i+'].data=this.value;persist()"';
+    var ev2 = d.si ? '' : ' oninput="S.arm['+i+'].doc=this.value;persist()"';
+    var saldoColor = sl < 0 ? 'color:var(--red,#f85149)' : 'color:var(--teal)';
+    html += '<tr>' +
+      '<td>'+tipo+'</td>' +
+      '<td><input style="width:88px" value="'+d.data+'"'+ro+ev+'></td>' +
+      '<td><input style="width:80px" value="'+d.doc+'"'+ro+ev2+'></td>' +
+      '<td><input type="number" style="width:72px" value="'+d.qtd+'" oninput="S.arm['+i+'].qtd=+this.value;updA()"></td>' +
+      '<td><input class="calc" style="width:70px" value="R$ 40,00" readonly></td>' +
+      '<td style="font-size:12px;font-weight:700;padding:4px 8px;'+saldoColor+'">'+sl+'</td>' +
+      '<td>'+(d.si?'':'<button class="del-btn" onclick="delRow(\'A\','+i+')">✕</button>')+'</td>' +
+    '</tr>';
+  });
+  document.getElementById('tbody-arm').innerHTML = html;
+  updA();
+}
+function updA() {
+  var sl=0, totalEnt=0, totalSai=0;
+  S.arm.forEach(function(d){
+    if (d.si) { sl=d.qtd; }
+    else if (d.tipo==='S') { sl-=d.qtd; totalSai+=d.qtd; }
+    else { sl+=d.qtd; totalEnt+=d.qtd; }
+  });
+  var v = sl * 40;
+  document.getElementById('a-qtd').textContent   = totalEnt + ' E / ' + totalSai + ' S';
+  document.getElementById('a-val').textContent   = BRL(v);
+  document.getElementById('a-saldo').textContent = sl;
+  persist(); calcRes();
+}
+
+function renderSeg() {
+  var html = '', sl = 0;
+  S.seg.forEach(function(d, i) {
+    if (d.si) { sl = d.nota; }
+    else { sl = d.tipo === 'S' ? sl - d.nota : sl + d.nota; }
+    var tipo = d.si
+      ? '<span style="font-size:10px;color:var(--text2)">Saldo Inicial</span>'
+      : d.tipo === 'E'
+        ? '<span style="background:#1a3a28;color:var(--green);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px">ENTRADA</span>'
+        : '<span style="background:#3a1a1a;color:var(--orange);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px">SAÍDA</span>';
+    var ro  = d.si ? ' class="ro" readonly' : '';
+    var ev  = d.si ? '' : ' oninput="S.seg['+i+'].data=this.value;persist()"';
+    var ev2 = d.si ? '' : ' oninput="S.seg['+i+'].doc=this.value;persist()"';
+    var saldoColor = sl < 0 ? 'color:var(--red,#f85149)' : 'color:var(--teal)';
+    html += '<tr>' +
+      '<td>'+tipo+'</td>' +
+      '<td><input style="width:88px" value="'+d.data+'"'+ro+ev+'></td>' +
+      '<td><input style="width:68px" value="'+d.doc+'"'+ro+ev2+'></td>' +
+      '<td><input type="number" style="width:100px" value="'+d.nota+'" oninput="S.seg['+i+'].nota=+this.value;updS()"></td>' +
+      '<td style="font-size:11px;color:var(--text2);padding:4px 8px">0,20%</td>' +
+      '<td style="font-size:12px;font-weight:700;padding:4px 8px;'+saldoColor+'">'+BRL(sl)+'</td>' +
+      '<td>'+(d.si?'':'<button class="del-btn" onclick="delRow(\'SG\','+i+')">✕</button>')+'</td>' +
+    '</tr>';
+  });
+  document.getElementById('tbody-seg').innerHTML = html;
+  updS();
+}
+function updS() {
+  var sl=0;
+  S.seg.forEach(function(d){
+    if (d.si) { sl=d.nota; }
+    else if (d.tipo==='S') { sl-=d.nota; }
+    else { sl+=d.nota; }
+  });
+  var v = sl * 0.002;
+  document.getElementById('s-base').textContent  = BRL(sl);
+  document.getElementById('s-val').textContent   = BRL(v);
+  document.getElementById('s-saldo').textContent = BRL(sl);
+  persist(); calcRes();
+}
+
+function addRow(t) {
+  if (t==='D')  { S.descargas.push({data:'', doc:'', qtd:0, tarifa:25}); renderDesc(); }
+  if (t==='AE') { S.arm.push({data:'', doc:'', qtd:0, tarifa:40, tipo:'E'}); renderArm(); }
+  if (t==='AS') { S.arm.push({data:'', doc:'', qtd:0, tarifa:40, tipo:'S'}); renderArm(); }
+  if (t==='A')  { S.arm.push({data:'', doc:'', qtd:0, tarifa:40, tipo:'E'}); renderArm(); }
+  if (t==='SE') { S.seg.push({data:'', doc:'', nota:0, al:0.002, tipo:'E'}); renderSeg(); }
+  if (t==='SS') { S.seg.push({data:'', doc:'', nota:0, al:0.002, tipo:'S'}); renderSeg(); }
+  if (t==='S')  { S.seg.push({data:'', doc:'', nota:0, al:0.002, tipo:'E'}); renderSeg(); }
+}
+function delRow(t, i) {
+  if (t==='D')  { S.descargas.splice(i,1); renderDesc(); }
+  if (t==='A')  { S.arm.splice(i,1); renderArm(); }
+  if (t==='SG') { S.seg.splice(i,1); renderSeg(); }
+}
+
+function calcOthers() {
+  S.stretch = +(document.getElementById('f-stretch').value||0);
+  document.getElementById('v-stretch').value = BRL(S.stretch*25);
+  persist(); calcRes();
+}
+function calcRes() {
+  S.fatmin = +(document.getElementById('f-fatmin') ? document.getElementById('f-fatmin').value : S.fatmin);
+  var c = cAll();
+  var ids = ['r-receb','r-arm','r-seg','r-stretch','r-crc','r-crciss','r-fatiss','r-total'];
+  var vals = [c.d.v, c.a.v, c.sg.v, c.st, c.crc, c.crcIss, c.fatIss, c.total];
+  ids.forEach(function(id,i){ var el=document.getElementById(id); if(el) el.value=BRL(vals[i]); });
+  persist();
+}
+
+// ---- MEDIÇÃO ----
+function toggleMedAtivo() {
+  if (!S.med) S.med = {ativo:false,mostrarDash:false,quinzena1:0,quinzena2:0,periodoRef:''};
+  S.med.ativo = !S.med.ativo;
+  document.getElementById('med-body').style.display = S.med.ativo ? 'block' : 'none';
+  document.getElementById('med-ativo-label').textContent = S.med.ativo ? '⏸ Desativar Medição' : '▶ Ativar Medição';
+  persist();
+}
+function toggleMedDash() {
+  if (!S.med) S.med = {ativo:false,mostrarDash:false,quinzena1:0,quinzena2:0,periodoRef:''};
+  S.med.mostrarDash = document.getElementById('med-dash-toggle').checked;
+  persist();
+  renderDash();
+}
+function updMed() {
+  if (!S.med) S.med = {ativo:false,mostrarDash:false,quinzena1:0,quinzena2:0,periodoRef:''};
+  S.med.periodoRef = document.getElementById('med-periodo').value;
+  S.med.quinzena1  = +(document.getElementById('med-q1').value||0);
+  S.med.quinzena2  = +(document.getElementById('med-q2').value||0);
+  var q1     = S.med.quinzena1;
+  var q2     = S.med.quinzena2;
+  var total  = q1 + q2;
+  var fatMin = S.fatmin || 50000;
+  var iss5   = (fatMin/0.95)*0.05;
+  var fatIss = fatMin + iss5;
+  var valMed = fatIss - total;          // Valor da mediação = fat. mín. total - soma quinzenas
+  var saldo  = q2 + valMed;             // Saldo = 2ª quinzena + valor da mediação
+  var set = function(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; };
+  set('med-q1-label',    BRL(q1));
+  set('med-q2-label',    BRL(q2));
+  set('med-total-quinz', BRL(total));
+  set('med-fatmin-val',  BRL(fatMin));
+  set('med-iss-val',     BRL(iss5));
+  set('med-fatmin-iss',  BRL(fatIss));
+  set('med-valmed',      BRL(valMed));
+  var sEl = document.getElementById('med-saldo');
+  if (sEl) { sEl.textContent = BRL(saldo); sEl.style.color = saldo > 0 ? 'var(--orange)' : 'var(--green)'; }
+  var vmEl = document.getElementById('med-valmed');
+  if (vmEl) vmEl.style.color = valMed >= 0 ? 'var(--teal)' : 'var(--green)';
+  persist();
+  renderDash();
+}
+
+// ---- SNAPSHOT ----
+function salvarSnapshot() {
+  var c = cAll();
+  var med = S.med || {};
+  var q1 = med.quinzena1 || 0;
+  var q2 = med.quinzena2 || 0;
+  var fatMin = S.fatmin || 50000;
+  var iss5 = (fatMin/0.95)*0.05;
+  var fatIss = fatMin + iss5;
+  var totalMed = q1 + q2;
+  var temMed = med.ativo && (q1 > 0 || q2 > 0);
+  var saldoMed = temMed ? (fatIss - totalMed) : null;
+  var valorTotal = temMed ? (c.crc + (saldoMed > 0 ? saldoMed : 0)) : c.crc;
+  S.historico.unshift({
+    id: Date.now(),
+    cliente: S.cliente, periodo: S.periodo,
+    crc: c.crc, iss: c.iss,
+    fatMin: fatMin, fatIss: fatIss,
+    q1: q1, q2: q2, totalMed: totalMed,
+    saldoMed: saldoMed, temMed: temMed,
+    valorTotal: valorTotal,
+    periodoRef: med.periodoRef || '',
+    receb: c.d.v, arm: c.a.v, seg: c.sg.v, sep: c.st,
+    data: new Date().toLocaleDateString('pt-BR')
+  });
+  persist();
+  showNotice('✓ Snapshot salvo no histórico!');
+}
+
+// ---- HISTÓRICO ----
+function renderHist() {
+  var el = document.getElementById('hist-list');
+  if (!S.historico.length) {
+    el.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text2)">Nenhum snapshot salvo ainda.</div>';
+    return;
+  }
+  el.innerHTML = S.historico.map(function(h, i) {
+
+    var colMed = h.temMed
+      ? '<div style="text-align:center">' +
+          '<div style="font-size:10px;color:var(--text2);margin-bottom:3px">Valor Mediação</div>' +
+          '<div style="font-weight:700;color:var(--purple);font-size:14px">'+BRL(h.saldoMed > 0 ? h.saldoMed : 0)+'</div>' +
+          (h.periodoRef ? '<div style="font-size:10px;color:var(--text2)">'+h.periodoRef+'</div>' : '') +
+        '</div>'
+      : '<div style="text-align:center">' +
+          '<div style="font-size:10px;color:var(--text2);margin-bottom:3px">Valor Mediação</div>' +
+          '<div style="font-weight:700;color:var(--text2);font-size:14px">R$ —</div>' +
+        '</div>';
+
+    var rentab = h.temMed
+      ? (h.saldoMed <= 0
+          ? '<span style="font-size:10px;color:var(--green)">✓ Mínimo atingido</span>'
+          : '<span style="font-size:10px;color:var(--orange)">Saldo a cobrar</span>')
+      : '';
+
+    var totaisRow =
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-top:10px">' +
+        '<div style="background:var(--dark3);padding:10px 14px;text-align:center">' +
+          '<div style="font-size:10px;color:var(--text2);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em">CRC</div>' +
+          '<div style="font-weight:700;color:var(--blue);font-size:14px">'+BRL(h.crc)+'</div>' +
+          '<div style="font-size:10px;color:var(--text2);margin-top:2px">ISS: '+BRL(h.iss)+'</div>' +
+        '</div>' +
+        '<div style="background:var(--dark3);padding:10px 14px">'+colMed+'</div>' +
+        '<div style="background:var(--dark3);padding:10px 14px;text-align:center">' +
+          '<div style="font-size:10px;color:var(--text2);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em">Valor Total</div>' +
+          '<div style="font-weight:700;color:var(--green);font-size:16px">'+BRL(h.valorTotal)+'</div>' +
+          '<div style="margin-top:2px">'+rentab+'</div>' +
+        '</div>' +
+      '</div>';
+
+    var blocoServ =
+      '<div style="margin-top:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px">' +
+        '<div style="background:var(--dark4);border-radius:4px;padding:6px 10px">' +
+          '<div style="font-size:10px;color:var(--text2)">Recebimento</div>' +
+          '<div style="font-size:12px;color:var(--blue);font-weight:600">'+BRL(h.receb||0)+'</div>' +
+        '</div>' +
+        '<div style="background:var(--dark4);border-radius:4px;padding:6px 10px">' +
+          '<div style="font-size:10px;color:var(--text2)">Armazenagem</div>' +
+          '<div style="font-size:12px;color:var(--yellow);font-weight:600">'+BRL(h.arm||0)+'</div>' +
+        '</div>' +
+        '<div style="background:var(--dark4);border-radius:4px;padding:6px 10px">' +
+          '<div style="font-size:10px;color:var(--text2)">Seguro</div>' +
+          '<div style="font-size:12px;color:var(--orange);font-weight:600">'+BRL(h.seg||0)+'</div>' +
+        '</div>' +
+        '<div style="background:var(--dark4);border-radius:4px;padding:6px 10px">' +
+          '<div style="font-size:10px;color:var(--text2)">Sep. / Expedição</div>' +
+          '<div style="font-size:12px;color:var(--teal);font-weight:600">'+BRL(h.sep||0)+'</div>' +
+        '</div>' +
+      '</div>';
+
+    return '<div style="border-top:1px solid var(--border);padding:14px 16px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+        '<div>' +
+          '<div style="font-weight:700;font-size:13px">'+h.cliente+'</div>' +
+          '<div class="hm" style="margin-top:2px">'+h.periodo+' · Salvo em '+h.data+'</div>' +
+        '</div>' +
+        '<button class="del-btn" onclick="delHist('+i+')" title="Remover">✕</button>' +
+      '</div>' +
+      totaisRow +
+      blocoServ +
+    '</div>';
+  }).join('');
+}
+function delHist(i) { S.historico.splice(i,1); persist(); renderHist(); }
+
+// ---- LIMPAR (confirmação em duas etapas, sem confirm() nativo — bloqueado no sandbox do Artifact) ----
+var confirmLimpar = null;
+function limparForm() {
+  var btn = document.getElementById('btn-limparform');
+  if (confirmLimpar === 'form') {
+    var h = S.historico;
+    S = JSON.parse(JSON.stringify(DEF));
+    S.historico = h;
+    persist(); renderForms();
+    confirmLimpar = null;
+    btn.textContent = 'Limpar Lançamentos';
+    btn.classList.remove('btn-danger-confirm');
+  } else {
+    confirmLimpar = 'form';
+    btn.textContent = 'Confirmar? (mantém histórico)';
+    btn.classList.add('btn-danger-confirm');
+    setTimeout(function(){
+      if (confirmLimpar === 'form') {
+        confirmLimpar = null;
+        btn.textContent = 'Limpar Lançamentos';
+        btn.classList.remove('btn-danger-confirm');
+      }
+    }, 3000);
+  }
+}
+function clearAll() {
+  var btn = document.getElementById('btn-clearall');
+  if (confirmLimpar === 'all') {
+    S = JSON.parse(JSON.stringify(DEF));
+    persist(); renderDash();
+    confirmLimpar = null;
+    btn.textContent = '🗑 Limpar Tudo';
+    btn.classList.remove('btn-danger-confirm');
+  } else {
+    confirmLimpar = 'all';
+    btn.textContent = 'Confirmar? (apaga histórico)';
+    btn.classList.add('btn-danger-confirm');
+    setTimeout(function(){
+      if (confirmLimpar === 'all') {
+        confirmLimpar = null;
+        btn.textContent = '🗑 Limpar Tudo';
+        btn.classList.remove('btn-danger-confirm');
+      }
+    }, 3000);
+  }
+}
+
+// ---- DOWNLOADS (usa a capacidade "downloads" do Artifact; sem ela, cai para o método antigo) ----
+var downloadsNS = null;
+async function baixarArquivo(filename, dataStr, mime) {
+  if (downloadsNS) {
+    try {
+      await downloadsNS.save({ filename: filename, data: dataStr });
+      showNotice('✓ Arquivo salvo.');
+      return true;
+    } catch (e) {
+      showNotice(e && e.code === 'declined' ? 'Download cancelado.' : '⚠ Não foi possível salvar o arquivo aqui.');
+      return false;
+    }
+  }
+  var blob = new Blob(['﻿' + dataStr], {type: (mime||'text/plain') + ';charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  showNotice('✓ Arquivo salvo.');
+  return true;
+}
+
+function exportCSV() {
+  var c = cAll();
+  var rows = [
+    ['SISTEMA DE APURAÇÃO DE SERVIÇOS'],
+    ['Cliente', S.cliente, 'CNPJ', S.cnpj],
+    ['Período', S.periodo], [],
+    ['DESCARGAS','DATA','DOC','QTD','TARIFA','VALOR']
+  ];
+  S.descargas.forEach(function(d){ rows.push(['', d.data, d.doc, d.qtd, d.tarifa, d.qtd*d.tarifa]); });
+  rows.push(['TOTAL DESCARGAS','','', cD().q,'',cD().v], []);
+  rows.push(['ARMAZENAGEM','DATA','DOC','QTD','TARIFA','VALOR']);
+  S.arm.forEach(function(d){ rows.push(['', d.data, d.doc, d.qtd, d.tarifa, d.qtd*d.tarifa]); });
+  rows.push(['TOTAL ARMAZENAGEM','','',cA().sl,'',cA().v], []);
+  rows.push(['SEGURO','DATA','DOC','NOTA','ALÍQUOTA','VALOR']);
+  S.seg.forEach(function(d){ rows.push(['', d.data, d.doc, d.nota, d.al, d.nota*d.al]); });
+  rows.push(['TOTAL SEGURO','','',cS().b,'',cS().v], []);
+  rows.push(['RESUMO'],['Recebimento',c.d.v],['Armazenagem',c.a.v],['Seguro',c.sg.v],
+    ['Sep. / Expedição',c.st],['VALOR CRC',c.crc],
+    ['CRC + ISS 5%',c.crcIss],['Fat. Mínimo + ISS',c.fatIss],['TOTAL FINAL',c.total]);
+  var csv = rows.map(function(r){return r.join(';');}).join('\r\n');
+  baixarArquivo('apuracao_' + (S.periodo.replace(/\//g,'-')||'export') + '.csv', csv, 'text/csv');
+}
+
+// ---- GERAR RELATÓRIO IMPRIMÍVEL (baixa um .html pronto para Ctrl+P → Salvar como PDF) ----
+function gerarPDF() {
+  var BRLp = function(v){ return 'R$ ' + (v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+  var cacSrc = document.getElementById('logo-cac') ? document.getElementById('logo-cac').src : '';
+
+  function mkHeader(pg, titulo, sub) {
+    var h = '<div class="page">';
+    h += '<div class="header">';
+    if(cacSrc) h += '<img src="'+cacSrc+'" alt="Cacique">';
+    h += '<div class="header-info">';
+    h += '<div class="header-title">'+S.cliente+'</div>';
+    h += '<div class="header-sub">CNPJ: '+S.cnpj+' &nbsp;|&nbsp; Período: '+S.periodo+'</div>';
+    h += '</div>';
+    h += '<div class="header-badge">Apuração de Serviços</div></div>';
+    h += '<div class="tab-title">Aba '+pg+' — <span>'+titulo+(sub?' &nbsp;·&nbsp; '+sub:'')+'</span></div>';
+    return h;
+  }
+
+  var rowsEnt = '';
+  var totQtdE=0, totValE=0;
+  S.descargas.forEach(function(d,i){
+    var val=d.qtd*d.tarifa; totQtdE+=d.qtd; totValE+=val;
+    var bg=i%2===0?'#fff':'#f7f7f7';
+    rowsEnt += '<tr style="background:'+bg+'"><td>'+(d.data||'—')+'</td><td style="text-align:center">'+(d.doc||'—')+'</td><td style="text-align:center">'+d.qtd+'</td><td style="text-align:right">'+BRLp(d.tarifa)+'</td><td style="text-align:right">'+BRLp(val)+'</td></tr>';
+  });
+  rowsEnt += '<tr class="tot"><td colspan="2">TOTAL</td><td style="text-align:center">'+totQtdE+'</td><td></td><td style="text-align:right">'+BRLp(totValE)+'</td></tr>';
+
+  var rowsArm = '';
+  var slArm=0, totQtdEA=0, totQtdSA=0;
+  S.arm.forEach(function(d,i){
+    if(d.si){ slArm=d.qtd; }
+    else if(d.tipo==='S'){ slArm-=d.qtd; totQtdSA+=d.qtd; }
+    else { slArm+=d.qtd; totQtdEA+=d.qtd; }
+    var bg=i%2===0?'#fff':'#f7f7f7';
+    var tipoLabel = d.si ? '<span style="color:#888;font-size:10px">Saldo Inicial</span>'
+      : d.tipo==='E' ? '<span style="border:1px solid #27ae60;color:#27ae60;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px">ENT</span>'
+      : '<span style="border:1px solid #e67e22;color:#e67e22;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px">SAÍ</span>';
+    var slColor = slArm<0 ? '#c0392b' : '#222';
+    rowsArm += '<tr style="background:'+bg+'"><td>'+tipoLabel+'</td><td>'+(d.data||'—')+'</td><td style="text-align:center">'+(d.doc||'—')+'</td><td style="text-align:center">'+d.qtd+'</td><td style="text-align:right">'+BRLp(d.tarifa)+'</td><td style="text-align:center;color:'+slColor+';font-weight:700">'+slArm+'</td></tr>';
+  });
+  rowsArm += '<tr class="tot"><td colspan="3">TOTAL</td><td style="text-align:center">'+totQtdEA+' E / '+totQtdSA+' S</td><td></td><td style="text-align:center">'+slArm+'</td></tr>';
+
+  var rowsSeg = '';
+  var slSeg=0, totBaseSeg=0, totValSeg=0;
+  S.seg.forEach(function(d,i){
+    if(d.si){ slSeg=d.nota; }
+    else if(d.tipo==='S'){ slSeg-=d.nota; }
+    else { slSeg+=d.nota; }
+    totBaseSeg+=d.nota; totValSeg=slSeg*0.002;
+    var bg=i%2===0?'#fff':'#f7f7f7';
+    var tipoLabel = d.si ? '<span style="color:#888;font-size:10px">Saldo Inicial</span>'
+      : d.tipo==='E' ? '<span style="border:1px solid #27ae60;color:#27ae60;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px">ENT</span>'
+      : '<span style="border:1px solid #e67e22;color:#e67e22;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px">SAÍ</span>';
+    var slColor = slSeg<0 ? '#c0392b' : '#222';
+    rowsSeg += '<tr style="background:'+bg+'"><td>'+tipoLabel+'</td><td>'+(d.data||'—')+'</td><td style="text-align:center">'+(d.doc||'—')+'</td><td style="text-align:right">'+BRLp(d.nota)+'</td><td style="text-align:center;color:#555">0,20%</td><td style="text-align:right;color:'+slColor+';font-weight:700">'+BRLp(slSeg)+'</td></tr>';
+  });
+  rowsSeg += '<tr class="tot"><td colspan="3">TOTAL BASE</td><td style="text-align:right">'+BRLp(slSeg)+'</td><td style="text-align:center">0,20%</td><td style="text-align:right">'+BRLp(slSeg*0.002)+'</td></tr>';
+
+  var css = '@page{size:A4;margin:20mm 18mm}' +
+    'body{font-family:Arial,sans-serif;background:#fff;color:#222;margin:0;padding:0}' +
+    '.page{background:#fff;padding:0;page-break-after:always}.page:last-child{page-break-after:auto}' +
+    '.header{display:flex;align-items:center;gap:20px;padding-bottom:14px;border-bottom:2px solid #222;margin-bottom:24px}' +
+    '.header img{height:56px;width:auto}' +
+    '.header-info{flex:1}' +
+    '.header-title{font-size:16px;font-weight:700;color:#222;text-transform:uppercase;letter-spacing:.04em}' +
+    '.header-sub{font-size:10px;color:#555;margin-top:4px}' +
+    '.header-badge{border:1.5px solid #222;border-radius:4px;padding:5px 14px;font-size:10px;color:#222;font-weight:700;white-space:nowrap;text-transform:uppercase;letter-spacing:.06em}' +
+    '.tab-title{font-size:13px;font-weight:700;letter-spacing:.06em;color:#222;margin:0 0 16px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:8px}' +
+    '.tab-title span{font-weight:400;color:#555}' +
+    'table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:20px}' +
+    'th{padding:8px 10px;border-bottom:2px solid #222;color:#222;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}' +
+    'td{padding:8px 10px;border-bottom:1px solid #ddd;font-size:11px;color:#222}' +
+    'tr.tot td{border-top:2px solid #222;border-bottom:2px solid #222;font-weight:700;font-size:12px}' +
+    '.footer{margin-top:30px;padding-top:10px;border-top:1px solid #ccc;font-size:9px;color:#888;text-align:center}';
+
+  var footer = '<div class="footer">Sistema de Apuração de Serviços &nbsp;|&nbsp; Gerado em: '+new Date().toLocaleString('pt-BR')+'</div></div>';
+  var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Apuração — '+S.cliente+'</title><style>'+css+'</style></head><body>';
+
+  html += mkHeader(1,'Entradas (Remessas Recebidas)');
+  html += '<table><thead><tr><th>Data</th><th style="text-align:center">Documento</th><th style="text-align:center">Quantidade</th><th style="text-align:right">Tarifa R$</th><th style="text-align:right">Valor R$</th></tr></thead><tbody>'+rowsEnt+'</tbody></table>'+footer;
+
+  html += mkHeader(2,'Armazenagem / Movimentações','Entradas somam · Saídas diminuem');
+  html += '<table><thead><tr><th>Tipo</th><th>Data</th><th style="text-align:center">Documento</th><th style="text-align:center">Qtd Pallets</th><th style="text-align:right">Tarifa R$</th><th style="text-align:right">Valor R$</th><th style="text-align:center">Saldo</th></tr></thead><tbody>'+rowsArm+'</tbody></table>'+footer;
+
+  html += mkHeader(3,'Seguro — Notas Registradas','Alíquota 0,20%');
+  html += '<table><thead><tr><th>Tipo</th><th>Data</th><th style="text-align:center">Documento</th><th style="text-align:right">Valor Nota R$</th><th style="text-align:center">Alíquota</th><th style="text-align:right">Valor Seguro R$</th><th style="text-align:right">Saldo R$</th></tr></thead><tbody>'+rowsSeg+'</tbody></table>'+footer;
+
+  html += '</body></html>';
+
+  var nome = 'Apuracao_' + (S.periodo.replace(/\//g,'-')||'export') + '.html';
+  baixarArquivo(nome, html, 'text/html').then(function(ok){
+    if (ok) showNotice('✓ Relatório salvo — abra-o e use Ctrl+P → Salvar como PDF.');
+  });
+}
+
+// ---- INIT ----
+async function init() {
+  try {
+    if (window.claude && typeof window.claude.use === 'function') {
+      downloadsNS = await window.claude.use('downloads');
+    }
+  } catch(e) { downloadsNS = null; }
+  renderDash();
+}
+init();
+
+window.addEventListener('beforeunload', function() { persist(); });
+document.addEventListener('visibilitychange', function() { if(document.visibilityState === 'hidden') persist(); });
+window.addEventListener('pagehide', function() { persist(); });
+</script>
