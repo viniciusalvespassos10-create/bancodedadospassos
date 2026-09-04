@@ -13,9 +13,20 @@ Código-fonte dos painéis publicados como Claude Artifacts para a Vila Porto In
 - **Estoque Vila Velha** (`estoque-vila-velha.html`) — ocupação de endereços por cliente no Estabelecimento 15, Vila Velha ES.
   Publicado em: https://claude.ai/code/artifact/db7de67a-aceb-4217-974b-46959bddf9ef
 
+- **Apurações de Serviços** (`apuracoes-servicos.html`) — lista de clientes com o modelo de cobrança combinado com cada um, e link para o painel de apuração individual do cliente quando existir.
+  Publicado em: https://claude.ai/code/artifact/8276edd7-6693-42a3-ae15-cebce9e7eb29
+
+- **Apuração Cacique** (`apuracao-cacique.html`) — apuração detalhada de serviços (descargas, armazenagem, seguro) da Companhia Cacique de Café Solúvel. Vinculado a partir de Apurações de Serviços.
+  Publicado em: https://claude.ai/code/artifact/c8c6fd21-b70d-4cfb-b121-58f38b52fc36
+
+- **Apuração Olam** (`apuracao-olam.html`) — apuração de serviços (embalagens, caixas, bags, seguro e serviços extras) da Olam Agrícola. Vinculado a partir de Apurações de Serviços.
+  Publicado em: https://claude.ai/code/artifact/6a04de0e-9b4d-4b34-aca2-b02e7d5ed8c2
+
 ## Como funciona a sincronização
 
-O Faturamento e o Estoque Vila Velha usam o recurso `artifact` do Claude (auto-publicação): ao importar dados novos ou clicar em "Atualizar/Processar", a própria página busca seu HTML atual, atualiza o bloco `<script id="seedData">` com os dados novos e publica uma nova versão de si mesma. Assim, qualquer pessoa com o link vê os dados mais recentes ao abrir a página — sem precisar de login ou banco de dados externo.
+O Faturamento, o Estoque Vila Velha e as Apurações de Serviços usam o recurso `artifact` do Claude (auto-publicação): ao importar dados novos ou editar a lista de clientes, a própria página busca seu HTML atual, atualiza o bloco `<script id="seedData">` com os dados novos e publica uma nova versão de si mesma. Assim, qualquer pessoa com o link vê os dados mais recentes ao abrir a página — sem precisar de login ou banco de dados externo.
+
+A Apuração Cacique e a Apuração Olam usam o recurso `downloads` (para exportar CSV/relatório) em vez do `artifact` — por isso não fazem auto-publicação de dados e, por decisão de escopo, não têm o link público "Anyone with the link" habilitado (as duas capacidades são mutuamente exclusivas na plataforma).
 
 ## Publicar uma alteração
 

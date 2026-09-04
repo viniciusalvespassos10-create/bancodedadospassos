@@ -1,0 +1,1354 @@
+<title>Apuração Olam</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── LIGHT theme (forms) ── */
+:root {
+  --bg-light: #f4f3ef;
+  --surf-light: #ffffff;
+  --surf2-light: #f0efe9;
+  --surf3-light: #e8e7e0;
+  --brd-light: #dddcd4;
+  --brd2-light: #c8c7be;
+  --txt-light: #1a1a18;
+  --txt2-light: #5a5a52;
+  --txt3-light: #9a9a90;
+
+  /* ── DARK theme (dashboard) ── */
+  --bg-dark:    #0f1117;
+  --surf-dark:  #181c27;
+  --surf2-dark: #1e2336;
+  --surf3-dark: #242840;
+  --brd-dark:   #2a2f45;
+  --brd2-dark:  #363c58;
+  --txt-dark:   #e4e8f0;
+  --txt2-dark:  #8890aa;
+  --txt3-dark:  #555e7a;
+
+  /* Shared accents */
+  --accent:       #1a3a2a;
+  --accent-light: #2d5c40;
+  --yellow:       #f5e642;
+  --yellow-dark:  #c4b800;
+  --red:    #e05555;
+  --green:  #28a865;
+  --blue:   #3b82f6;
+  --orange: #f07030;
+  --font: 'Syne', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --r: 6px;
+  --r2: 10px;
+}
+
+/* ── Base ── */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100vh;background:var(--bg-light);color:var(--txt-light);font-family:var(--font);font-size:13px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--brd2-light);border-radius:3px}
+
+/* ── Layout ── */
+.layout{display:grid;grid-template-columns:200px 1fr;grid-template-rows:50px 1fr;min-height:100vh;max-width:1400px;margin:0 auto}
+/* full-width topbar needs to escape the max-width wrapper — we handle via position */
+.topbar{grid-column:1/-1;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;position:sticky;top:0;z-index:20}
+.topbar-logo{font-size:14px;font-weight:700;letter-spacing:0.4px;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.topbar-logo span{background:var(--yellow);color:var(--accent);padding:2px 7px;border-radius:3px;font-size:11px;font-weight:700}
+.topbar-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.sidebar{background:var(--surf-light);border-right:1px solid var(--brd-light);padding:16px 0;overflow-y:auto}
+.main{overflow-y:auto;min-width:0}
+
+/* Dashboard view gets dark bg; other views get light bg */
+#view-dashboard{background:var(--bg-dark);min-height:calc(100vh - 50px)}
+#view-lancar,#view-historico{background:var(--bg-light)}
+
+/* ── Nav (light sidebar) ── */
+.nav-group{margin-bottom:20px}
+.nav-label{font-size:10px;font-weight:600;color:var(--txt3-light);letter-spacing:0.12em;text-transform:uppercase;padding:0 14px 6px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 14px;cursor:pointer;color:var(--txt2-light);font-size:12px;font-weight:500;transition:all .15s;border-left:2.5px solid transparent}
+.nav-item:hover{color:var(--txt-light);background:var(--surf2-light)}
+.nav-item.active{color:var(--accent);background:#e8f0eb;border-left-color:var(--accent)}
+.nav-item svg{flex-shrink:0}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--r);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn-light{background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.2)}
+.btn-light:hover{background:rgba(255,255,255,0.22)}
+.btn-outline{background:transparent;color:var(--txt2-light);border:1px solid var(--brd2-light)}
+.btn-outline:hover{background:var(--surf2-light);color:var(--txt-light)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-light)}
+.btn-yellow{background:var(--yellow);color:var(--accent)}
+.btn-yellow:hover{background:#ede03a}
+.btn-danger{background:#fceaea;color:var(--red);border:1px solid #f5c2c2}
+.btn-danger:hover{background:#f9d5d5}
+
+/* ── Views ── */
+.view{display:none;padding:20px}
+.view.active{display:block}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.view.active{animation:fadeSlide .2s ease forwards}
+
+/* ── Page header ── */
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.ph-title{font-size:17px;font-weight:700;letter-spacing:-0.3px}
+.ph-sub{font-size:12px;margin-top:2px}
+.ph-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── KPI cards (dark) ── */
+.kpi{background:var(--surf-dark);border:1px solid var(--brd-dark);border-radius:var(--r2);padding:13px 15px;position:relative;overflow:hidden;min-width:0}
+.kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px}
+.kpi.k-green::after{background:var(--green)}
+.kpi.k-blue::after{background:var(--blue)}
+.kpi.k-orange::after{background:var(--orange)}
+.kpi.k-red::after{background:var(--red)}
+.kpi.k-yellow::after{background:var(--yellow-dark)}
+.kpi-label{font-size:10px;font-weight:600;color:var(--txt3-dark);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:5px}
+.kpi-val{font-size:16px;font-weight:700;font-family:var(--mono);letter-spacing:-0.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi-val.k-green{color:#4ade80}
+.kpi-val.k-blue{color:#93c5fd}
+.kpi-val.k-orange{color:#fdba74}
+.kpi-val.k-red{color:#f87171}
+.kpi-val.k-yellow{color:#fde047}
+.kpi-sub{font-size:10px;color:var(--txt3-dark);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── Dark cards (dashboard only) ── */
+.dcard{background:var(--surf-dark);border:1px solid var(--brd-dark);border-radius:var(--r2);overflow:hidden;min-width:0}
+.dcard-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--brd-dark)}
+.dcard-title{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--txt2-dark)}
+.dcard-body{padding:14px}
+.dcard.da{border-left:2px solid var(--green)}
+.dcard.db{border-left:2px solid var(--blue)}
+.dcard.dc{border-left:2px solid var(--yellow-dark)}
+.dcard.dd{border-left:2px solid var(--orange)}
+
+/* ── Light cards (forms) ── */
+.card{background:var(--surf-light);border:1px solid var(--brd-light);border-radius:var(--r2);margin-bottom:14px}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--brd-light)}
+.card-title{font-size:12px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--txt2-light)}
+.card-body{padding:16px}
+.card-accent{border-left:3px solid var(--accent)}
+.card-yellow{border-left:3px solid var(--yellow-dark)}
+.card-blue{border-left:3px solid #1a3a5c}
+.card-orange{border-left:3px solid var(--orange)}
+
+/* ── Section headers (forms) ── */
+.section-head{background:var(--accent);color:#fff;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:7px 14px;border-radius:var(--r) var(--r) 0 0;display:flex;align-items:center;gap:8px}
+
+/* ── Input rows ── */
+.input-grid{display:grid;gap:2px}
+.input-row{display:grid;align-items:center;border-bottom:1px solid var(--brd-light);transition:background .1s}
+.input-row:last-child{border-bottom:none}
+.input-row:hover{background:var(--surf2-light)}
+.input-row.highlight{background:#fdfbe8;border-left:3px solid var(--yellow-dark)}
+.input-row.highlight:hover{background:#faf7d0}
+.row-label{padding:8px 12px;color:var(--txt-light);font-size:12px;font-weight:500}
+.row-label.bold{font-weight:700}
+.row-input{padding:4px 8px;display:flex;align-items:center;gap:6px}
+input[type=number],input[type=text]{background:var(--surf2-light);border:1px solid var(--brd-light);border-radius:4px;color:var(--txt-light);font-family:var(--mono);font-size:12px;padding:5px 9px;width:100%;outline:none;transition:border .15s}
+input[type=number]:focus,input[type=text]:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(26,58,42,0.08)}
+input[readonly]{background:var(--surf3-light);color:var(--txt2-light);cursor:default}
+input.highlight-input{background:#fdfbe8;border-color:var(--yellow-dark)}
+input.result-input{background:var(--surf3-light);font-weight:600;color:var(--accent)}
+
+/* ── Dark summary table ── */
+.sum-table{width:100%;border-collapse:collapse}
+.sum-table th{font-size:10px;font-weight:700;color:var(--txt3-dark);letter-spacing:0.08em;text-transform:uppercase;padding:8px 12px;text-align:left;background:var(--surf2-dark);border-bottom:1px solid var(--brd-dark)}
+.sum-table td{padding:9px 12px;border-bottom:1px solid var(--brd-dark);font-size:12px;vertical-align:middle;color:var(--txt-dark)}
+.sum-table tr:last-child td{border-bottom:none;font-weight:700;font-size:13px;background:var(--surf2-dark)}
+.sum-table .mono{font-family:var(--mono);font-size:11px}
+.sum-table .right{text-align:right}
+.sum-table tr:hover td{background:var(--surf2-dark)}
+
+/* ── Light summary table (historico) ── */
+.sum-table-light th{font-size:10px;font-weight:700;color:var(--txt3-light);letter-spacing:0.08em;text-transform:uppercase;padding:8px 12px;text-align:left;background:var(--surf2-light);border-bottom:1px solid var(--brd-light)}
+.sum-table-light td{padding:9px 12px;border-bottom:1px solid var(--brd-light);font-size:12px;vertical-align:middle;color:var(--txt-light)}
+.sum-table-light tr:last-child td{border-bottom:none;font-weight:700;background:var(--surf2-light)}
+.sum-table-light .mono{font-family:var(--mono);font-size:11px}
+.sum-table-light .right{text-align:right}
+.sum-table-light tr:hover td{background:var(--surf2-light)}
+
+/* ── Bar chart (dark) ── */
+.bar-list{display:flex;flex-direction:column;gap:10px}
+.bar-item{display:grid;grid-template-columns:120px 1fr 90px;align-items:center;gap:10px}
+.bar-name{font-size:11px;color:var(--txt2-dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{height:6px;background:var(--surf3-dark);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .9s cubic-bezier(.4,0,.2,1)}
+.bar-val{font-size:11px;font-family:var(--mono);color:var(--txt2-dark);text-align:right}
+
+/* ── Tags ── */
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.tag-green{background:rgba(74,222,128,.15);color:#4ade80}
+.tag-blue{background:rgba(147,197,253,.15);color:#93c5fd}
+.tag-orange{background:rgba(253,186,116,.15);color:#fdba74}
+.tag-yellow{background:rgba(253,224,71,.15);color:#fde047}
+
+/* ── Total box (dark inline) ── */
+.total-box{display:none}
+.total-val{font-size:14px;font-weight:700;font-family:var(--mono);color:#4ade80}
+
+/* ── Stat row (dark estoque cards) ── */
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--brd-dark);font-size:12px}
+.stat-row:last-child{border-bottom:none}
+.stat-lbl{color:var(--txt2-dark)}
+.stat-val{font-family:var(--mono);font-size:11.5px;color:var(--txt-dark)}
+.stat-row.bold .stat-lbl{color:var(--txt-dark);font-weight:700}
+.stat-row.bold .stat-val{color:#fde047;font-weight:700}
+
+.dash-sx-btn{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:20px;color:var(--txt3-dark);font-family:var(--font);font-size:11px;font-weight:600;padding:4px 12px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.dash-sx-btn:hover{background:rgba(167,139,250,.18);color:#c4b5fd}
+.dash-sx-btn.active{background:rgba(167,139,250,.2);color:#c4b5fd;border-color:rgba(167,139,250,.5)}
+
+/* ── Serviços Extras tabs ── */
+.sx-tab{background:none;border:none;border-bottom:2px solid transparent;padding:10px 16px;font-family:var(--font);font-size:12px;font-weight:600;color:var(--txt2-light);cursor:pointer;white-space:nowrap;transition:all .15s;margin-bottom:-1px}
+.sx-tab:hover{color:var(--txt-light);background:var(--surf2-light)}
+.sx-tab.active{color:#3a1a5c;border-bottom-color:#3a1a5c;background:var(--surf-light)}
+.sx-row{display:grid;grid-template-columns:1fr 110px 110px 110px 32px;align-items:center;gap:0;border-bottom:1px solid var(--brd-light);transition:background .1s}
+.sx-row:hover{background:var(--surf2-light)}
+.sx-row:last-child{border-bottom:none}
+.sx-row input[type=text]{border:none;border-right:1px solid var(--brd-light);border-radius:0;background:transparent;padding:8px 10px;font-size:12px;width:100%}
+.sx-row input[type=number]{border:none;border-right:1px solid var(--brd-light);border-radius:0;background:transparent;padding:8px 10px;font-size:12px;text-align:right;width:100%}
+.sx-row input:focus{background:var(--surf2-light);outline:none}
+.sx-row .sx-total-cell{padding:8px 10px;font-size:12px;font-family:var(--mono);text-align:right;color:var(--txt-light);font-weight:600;background:var(--surf2-light)}
+.sx-del{background:none;border:none;color:var(--txt3-light);cursor:pointer;font-size:14px;padding:4px 6px;border-radius:3px;line-height:1}
+.sx-del:hover{background:#fceaea;color:var(--red)}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:20px;right:20px;background:var(--accent);color:#fff;border-radius:var(--r);padding:11px 16px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;box-shadow:0 6px 20px rgba(0,0,0,0.3);transform:translateY(60px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);z-index:99;max-width:280px}
+#toast.show{transform:translateY(0);opacity:1}
+
+/* ── Modal ── */
+#modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:50;display:none;align-items:center;justify-content:center}
+#modal-bg.open{display:flex}
+.modal{background:var(--surf-light);border-radius:var(--r2);width:360px;border:1px solid var(--brd-light)}
+.modal-head{padding:16px 18px;border-bottom:1px solid var(--brd-light);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:14px;font-weight:700}
+.modal-body{padding:18px}
+.modal-foot{padding:14px 18px;border-top:1px solid var(--brd-light);display:flex;gap:8px;justify-content:flex-end}
+.warn-box{background:#fdf0f0;border:1px solid #f5c5c5;border-radius:var(--r);padding:12px;font-size:12px;color:#7a2020;line-height:1.6;margin-bottom:12px}
+
+/* ── Responsive ── */
+@media(max-width:1024px){
+  .layout{grid-template-columns:180px 1fr}
+  .kpi-val{font-size:14px}
+}
+@media(max-width:768px){
+  .layout{grid-template-columns:1fr;grid-template-rows:50px 1fr}
+  .sidebar{display:none}
+  .dash-kpis{grid-template-columns:repeat(2,1fr)!important}
+  .dash-row2,.dash-row3{grid-template-columns:1fr!important}
+}
+@media(max-width:480px){
+  .dash-kpis{grid-template-columns:1fr 1fr!important}
+  .view{padding:12px}
+}
+
+/* Toast */
+#toast{position:fixed;bottom:20px;right:20px;background:var(--accent);color:#fff;border-radius:var(--r);padding:11px 16px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;box-shadow:0 6px 20px rgba(0,0,0,0.2);transform:translateY(60px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);z-index:99}
+#toast.show{transform:translateY(0);opacity:1}
+
+/* Modal */
+#modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:50;display:none;align-items:center;justify-content:center}
+#modal-bg.open{display:flex}
+.modal{background:var(--surf-light);border-radius:var(--r2);width:380px;border:1px solid var(--brd-light)}
+.modal-head{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:14px;font-weight:700}
+.modal-body{padding:18px}
+.modal-foot{padding:14px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.warn-box{background:#fdf0f0;border:1px solid #f5c5c5;border-radius:var(--r);padding:12px;font-size:12px;color:#7a2020;line-height:1.6;margin-bottom:12px}
+
+/* Responsive */
+@media(max-width:800px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .dash-grid,.dash-grid3{grid-template-columns:1fr}
+}
+</style>
+<div class="layout">
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="topbar-logo">
+    <span>OFI</span>
+    Sistema de Apuração de Serviços
+  </div>
+  <div class="topbar-actions">
+    <a class="btn btn-light" href="https://claude.ai/code/artifact/8276edd7-6693-42a3-ae15-cebce9e7eb29">↩ Apurações</a>
+    <a class="btn btn-light" href="https://claude.ai/code/artifact/a2f16c2a-b621-4e3d-8b7c-670900dd50ba">🏠 Menu Principal</a>
+    <button class="btn btn-light" onclick="exportCSV()">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 12h10M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Exportar CSV
+    </button>
+    <button class="btn btn-light" style="color:#fca5a5;border-color:rgba(252,165,165,0.3)" onclick="openClear()">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2.5A.5.5 0 016.5 2h3a.5.5 0 01.5.5V4M5 4l.5 9h5l.5-9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Limpar
+    </button>
+  </div>
+</header>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="nav-group">
+    <div class="nav-label">Navegação</div>
+    <div class="nav-item active" onclick="nav('dashboard')">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="nav('lancar')">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Lançar Apuração
+    </div>
+    <div class="nav-item" onclick="nav('historico')">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Histórico
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+
+<!-- ═══ DASHBOARD ═══ -->
+<div class="view active" id="view-dashboard">
+
+  <div class="ph" style="margin-bottom:14px">
+    <div>
+      <div class="ph-title" style="color:var(--txt-dark)">Dashboard</div>
+      <div class="ph-sub" id="dash-periodo" style="color:var(--txt3-dark)">Nenhum dado lançado ainda</div>
+    </div>
+    <div class="ph-actions">
+      <button class="btn btn-yellow" onclick="nav('lancar')">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Lançar Apuração
+      </button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="dash-kpis" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px">
+    <div class="kpi k-green"><div class="kpi-label">Total OFI</div><div class="kpi-val k-green" id="kpi-total">R$ 0</div><div class="kpi-sub">valor apurado</div></div>
+    <div class="kpi k-blue"><div class="kpi-label">Armazenagem</div><div class="kpi-val k-blue" id="kpi-armaz">R$ 0</div><div class="kpi-sub">caixas + bags</div></div>
+    <div class="kpi k-orange"><div class="kpi-label">Seguro</div><div class="kpi-val k-orange" id="kpi-seguro">R$ 0</div><div class="kpi-sub">0,20% da base</div></div>
+    <div class="kpi k-red"><div class="kpi-label">Caixas Pico</div><div class="kpi-val k-red" id="kpi-cx-pico">0</div><div class="kpi-sub" id="kpi-cx-pico-sub">un. — R$ 0</div></div>
+    <div class="kpi k-yellow"><div class="kpi-label">Bags Pico</div><div class="kpi-val k-yellow" id="kpi-bag-pico">0</div><div class="kpi-sub" id="kpi-bag-pico-sub">un. — R$ 0</div></div>
+  </div>
+
+  <!-- Gráfico + Tabela -->
+  <div class="dash-row2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <div class="dcard da">
+      <div class="dcard-head">
+        <div class="dcard-title">Composição do OFI</div>
+        <div id="total-box"><span class="total-val" id="total-val">R$ 0</span></div>
+      </div>
+      <div class="dcard-body">
+        <div class="bar-list" id="dash-bars">
+          <div style="color:var(--txt3-dark);font-size:12px;padding:8px 0">Nenhum dado lançado</div>
+        </div>
+      </div>
+    </div>
+    <div class="dcard db">
+      <div class="dcard-head"><div class="dcard-title">Resumo por Serviço</div></div>
+      <div style="overflow-x:auto">
+        <table class="sum-table">
+          <thead><tr><th>Serviço</th><th class="right">Qtd</th><th class="right">Tarifa</th><th class="right">OFI (R$)</th></tr></thead>
+          <tbody id="sum-tbody"><tr><td colspan="4" style="text-align:center;color:var(--txt3-dark);padding:16px">Nenhum dado</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estoques -->
+  <div class="dash-row3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+    <div class="dcard dc">
+      <div class="dcard-head"><div class="dcard-title">Embalagens</div><span class="tag tag-yellow">Saldo</span></div>
+      <div class="dcard-body"><div id="dash-emb"><div style="color:var(--txt3-dark);font-size:12px">—</div></div></div>
+    </div>
+    <div class="dcard db">
+      <div class="dcard-head"><div class="dcard-title">Caixas</div><span class="tag tag-blue">Pico</span></div>
+      <div class="dcard-body"><div id="dash-cx"><div style="color:var(--txt3-dark);font-size:12px">—</div></div></div>
+    </div>
+    <div class="dcard dd">
+      <div class="dcard-head"><div class="dcard-title">Bags</div><span class="tag tag-orange">Pico</span></div>
+      <div class="dcard-body"><div id="dash-bag"><div style="color:var(--txt3-dark);font-size:12px">—</div></div></div>
+    </div>
+  </div>
+
+  <!-- Serviços Extras no Dashboard -->
+  <div class="dcard" style="border-left:2px solid #a78bfa;margin-bottom:0" id="dash-extras-card">
+    <div class="dcard-head" style="display:flex;align-items:center;justify-content:space-between">
+      <div class="dcard-title">Serviços Extras</div>
+      <div style="display:flex;gap:8px;align-items:center" id="dash-extras-tabs-btns">
+        <button class="dash-sx-btn active" onclick="dashSxTab(0)" data-i="0">Horas Extras</button>
+        <button class="dash-sx-btn" onclick="dashSxTab(1)" data-i="1">Mão de Obra Terceira</button>
+        <button class="dash-sx-btn" onclick="dashSxTab(2)" data-i="2">Operação na Fábrica</button>
+        <button class="dash-sx-btn" onclick="dashSxTab(3)" data-i="3">Compras de Terceiros</button>
+      </div>
+    </div>
+    <div id="dash-extras-content" style="padding:0">
+      <div style="display:grid;grid-template-columns:1fr 120px 120px 130px;font-size:10px;font-weight:700;color:var(--txt3-dark);text-transform:uppercase;letter-spacing:.07em;padding:7px 14px;border-bottom:1px solid var(--brd-dark);background:var(--surf2-dark)">
+        <div>Descrição</div><div style="text-align:right">Qtd / Horas</div><div style="text-align:right">Valor Unit. R$</div><div style="text-align:right">Total R$</div>
+      </div>
+      <div id="dash-sx-rows" style="max-height:220px;overflow-y:auto"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-top:1px solid var(--brd-dark);background:var(--surf2-dark)">
+        <span id="dash-sx-tab-label" style="font-size:11px;color:var(--txt3-dark)">—</span>
+        <span style="font-size:13px;font-weight:700;font-family:var(--mono);color:#c4b5fd">Total: <span id="dash-sx-tab-total">R$ 0,00</span></span>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;align-items:center;padding:10px 14px;border-top:1px solid var(--brd-dark)">
+      <span style="font-size:11px;font-weight:700;color:var(--txt3-dark);text-transform:uppercase;letter-spacing:.07em;margin-right:12px">Total Serviços Extras</span>
+      <span id="dash-sx-grand" style="font-size:16px;font-weight:700;font-family:var(--mono);color:#a78bfa">R$ 0,00</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ LANÇAR APURAÇÃO ═══ -->
+<div class="view" id="view-lancar">
+  <div class="ph">
+    <div>
+      <div class="ph-title">Lançar Apuração</div>
+      <div class="ph-sub">Preencha os campos — cálculos automáticos em amarelo</div>
+    </div>
+    <div class="ph-actions">
+      <button class="btn btn-outline" onclick="limparForm()">Limpar</button>
+      <button class="btn btn-primary" onclick="salvar()">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 9l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Salvar e Atualizar Dashboard
+      </button>
+    </div>
+  </div>
+
+  <!-- Info geral -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-head"><div class="card-title">Informações da Apuração</div></div>
+    <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:5px;letter-spacing:.07em">Cliente</div>
+        <input type="text" id="f-cliente" placeholder="Nome do cliente" style="width:100%">
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:5px;letter-spacing:.07em">CNPJ</div>
+        <input type="text" id="f-cnpj" placeholder="00.000.000/0000-00" style="width:100%">
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:5px;letter-spacing:.07em">Período</div>
+        <input type="text" id="f-periodo" placeholder="16/03/2026 a 31/03/2026" style="width:100%">
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+
+    <!-- ── EMBALAGENS ── -->
+    <div>
+      <div class="section-head">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="1" y="5" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5V3.5A1.5 1.5 0 016.5 2h3A1.5 1.5 0 0111 3.5V5" stroke="currentColor" stroke-width="1.3"/></svg>
+        EMBALAGENS
+      </div>
+      <div class="input-grid" style="background:var(--surf-light);border:1px solid var(--brd-light);border-top:none;border-radius:0 0 var(--r2) var(--r2)">
+        <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr;padding:0 4px">
+          <div></div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-align:center;padding:6px 4px;text-transform:uppercase;letter-spacing:.06em">Qtd</div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-align:center;padding:6px 4px;text-transform:uppercase;letter-spacing:.06em">Tarifa R$</div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-align:center;padding:6px 4px;text-transform:uppercase;letter-spacing:.06em">OFI R$</div>
+        </div>
+        <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+          <div class="row-label">Estoque Remanescente</div>
+          <div class="row-input"><input type="number" id="emb-estoque" placeholder="0" oninput="calc()"></div>
+          <div class="row-input"><div style="font-size:11px;color:var(--txt3-light);padding:0 4px;font-family:var(--mono)">—</div></div>
+          <div class="row-input"><div style="font-size:11px;color:var(--txt3-light);padding:0 4px;font-family:var(--mono)">—</div></div>
+        </div>
+        <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+          <div class="row-label">Entrada</div>
+          <div class="row-input"><input type="number" id="emb-entrada" placeholder="0" oninput="calc()"></div>
+          <div class="row-input"><input type="number" value="25.20" id="emb-tarifa-ent" oninput="calc()"></div>
+          <div class="row-input"><input type="number" id="emb-ofi-ent" class="result-input" readonly></div>
+        </div>
+        <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+          <div class="row-label">Saída</div>
+          <div class="row-input"><input type="number" id="emb-saida" placeholder="0" oninput="calc()"></div>
+          <div class="row-input"><input type="number" value="26.10" id="emb-tarifa-sai" oninput="calc()"></div>
+          <div class="row-input"><input type="number" id="emb-ofi-sai" class="result-input" readonly></div>
+        </div>
+        <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+          <div class="row-label">Estoque de Embalagem</div>
+          <div class="row-input"><input type="number" id="emb-estoque-atual" class="result-input" readonly></div>
+          <div class="row-input"></div><div class="row-input"></div>
+        </div>
+        <div class="input-row highlight" style="grid-template-columns:160px 1fr 1fr 1fr">
+          <div class="row-label bold">Saldo</div>
+          <div class="row-input"><input type="number" id="emb-saldo" class="result-input highlight-input" readonly></div>
+          <div class="row-input"><input type="number" value="36" id="emb-tarifa-final" oninput="calc()"></div>
+          <div class="row-input"><input type="number" id="emb-ofi-final" class="result-input" readonly></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── OUTROS SERVIÇOS ── -->
+    <div>
+      <div class="section-head" style="background:var(--blue)">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        OUTROS SERVIÇOS
+      </div>
+      <div class="input-grid" style="background:var(--surf-light);border:1px solid var(--brd-light);border-top:none;border-radius:0 0 var(--r2) var(--r2)">
+        <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr;padding:0 4px">
+          <div></div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-align:center;padding:6px 4px;text-transform:uppercase;letter-spacing:.06em">Qtd</div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-align:center;padding:6px 4px;text-transform:uppercase;letter-spacing:.06em">Tarifa R$</div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-align:center;padding:6px 4px;text-transform:uppercase;letter-spacing:.06em">OFI R$</div>
+        </div>
+        <!-- Seguro -->
+        <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+          <div class="row-label">Base Seguro (R$)</div>
+          <div class="row-input" style="grid-column:span 2"><input type="number" id="seg-base" placeholder="126.060.700,82" oninput="calc()" style="width:100%"></div>
+          <div class="row-input"></div>
+        </div>
+        <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+          <div class="row-label">Alíquota Seguro</div>
+          <div class="row-input"><input type="number" id="seg-aliq" value="0.20" step="0.01" placeholder="0.20%" oninput="calc()"></div>
+          <div class="row-input"><div style="font-size:11px;color:var(--text3);padding-left:4px">%</div></div>
+          <div class="row-input"><input type="number" id="seg-ofi" class="result-input" readonly></div>
+        </div>
+        <!-- Stretchamento -->
+        <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+          <div class="row-label">Stretchamento</div>
+          <div class="row-input"><input type="number" id="str-qtd" placeholder="0" oninput="calc()"></div>
+          <div class="row-input"><input type="number" id="str-tarifa" value="27" oninput="calc()"></div>
+          <div class="row-input"><input type="number" id="str-ofi" class="result-input" readonly></div>
+        </div>
+        <!-- Estufamento -->
+        <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+          <div class="row-label">Estufamento</div>
+          <div class="row-input"><input type="number" id="est-qtd" placeholder="0" oninput="calc()"></div>
+          <div class="row-input"><input type="number" id="est-tarifa" value="1180" oninput="calc()"></div>
+          <div class="row-input"><input type="number" id="est-ofi" class="result-input" readonly></div>
+        </div>
+        <!-- Remontagem Bags -->
+        <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+          <div class="row-label">Remontagem Bags</div>
+          <div class="row-input"><input type="number" id="rem-qtd" placeholder="0" oninput="calc()"></div>
+          <div class="row-input"><input type="number" id="rem-tarifa" value="18" oninput="calc()"></div>
+          <div class="row-input"><input type="number" id="rem-ofi" class="result-input" readonly></div>
+        </div>
+        <div class="input-row" style="grid-template-columns:160px 1fr;background:var(--surface2)">
+          <div class="row-label bold" style="color:var(--blue)">Total Outros</div>
+          <div class="row-input"><input type="number" id="outros-total" class="result-input" style="color:var(--blue);font-weight:700" readonly></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CAIXAS ── -->
+  <div style="margin-bottom:14px">
+    <div class="section-head" style="background:#1a3a5c">CAIXAS</div>
+    <div style="background:var(--surf-light);border:1px solid var(--brd-light);border-top:none;border-radius:0 0 var(--r2) var(--r2)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface2)">Movimentação Principal</div>
+          <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+            <div class="row-label">Estoque Remanescente</div>
+            <div class="row-input"><input type="number" id="cx-estoque" placeholder="0" oninput="calc()"></div>
+            <div class="row-input"><div style="font-size:11px;color:var(--text3);padding:0 4px">—</div></div>
+            <div class="row-input"><div style="font-size:11px;color:var(--text3);padding:0 4px">—</div></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+            <div class="row-label">Entrada</div>
+            <div class="row-input"><input type="number" id="cx-entrada" placeholder="0" oninput="calc()"></div>
+            <div class="row-input"><input type="number" value="25.20" id="cx-tarifa-ent" oninput="calc()"></div>
+            <div class="row-input"><input type="number" id="cx-ofi-ent" class="result-input" readonly></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+            <div class="row-label">Saída</div>
+            <div class="row-input"><input type="number" id="cx-saida" placeholder="0" oninput="calc()"></div>
+            <div class="row-input"><input type="number" value="26.10" id="cx-tarifa-sai" oninput="calc()"></div>
+            <div class="row-input"><input type="number" id="cx-ofi-sai" class="result-input" readonly></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr">
+            <div class="row-label">Estoque Caixas</div>
+            <div class="row-input"><input type="number" id="cx-estoque-atual" class="result-input" readonly></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr">
+            <div class="row-label">Saldo</div>
+            <div class="row-input"><input type="number" id="cx-saldo" class="result-input" readonly></div>
+          </div>
+        </div>
+        <div style="border-left:1px solid var(--border)">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface2)">Rework</div>
+          <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+            <div class="row-label bold">Entrada Rework</div>
+            <div class="row-input"><input type="number" id="cx-rew-ent" placeholder="0" oninput="calc()"></div>
+            <div class="row-input"><input type="number" value="25.20" id="cx-rew-tarifa-ent" oninput="calc()"></div>
+            <div class="row-input"><input type="number" id="cx-rew-ofi-ent" class="result-input" readonly></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr">
+            <div class="row-label">Rework (Estoque)</div>
+            <div class="row-input"><input type="number" id="cx-rew-estoque" placeholder="0" oninput="calc()"></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr">
+            <div class="row-label">Saldo c/ Rework</div>
+            <div class="row-input"><input type="number" id="cx-saldo-rew" class="result-input" readonly></div>
+          </div>
+          <div class="input-row highlight" style="grid-template-columns:160px 1fr 1fr 1fr">
+            <div class="row-label bold">Pico</div>
+            <div class="row-input"><input type="number" id="cx-pico" class="result-input highlight-input" readonly></div>
+            <div class="row-input"><input type="number" value="63" id="cx-tarifa-pico" oninput="calc()"></div>
+            <div class="row-input"><input type="number" id="cx-ofi-pico" class="result-input" readonly></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BAGS ── -->
+  <div style="margin-bottom:14px">
+    <div class="section-head" style="background:#6b3a10">BAGS</div>
+    <div style="background:var(--surf-light);border:1px solid var(--brd-light);border-top:none;border-radius:0 0 var(--r2) var(--r2)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface2)">Movimentação Principal</div>
+          <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+            <div class="row-label">Estoque Remanescente</div>
+            <div class="row-input"><input type="number" id="bag-estoque" placeholder="0" oninput="calc()"></div>
+            <div class="row-input"><div style="font-size:11px;color:var(--text3);padding:0 4px">—</div></div>
+            <div class="row-input"><div style="font-size:11px;color:var(--text3);padding:0 4px">—</div></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+            <div class="row-label">Entrada</div>
+            <div class="row-input"><input type="number" id="bag-entrada" placeholder="0" oninput="calc()"></div>
+            <div class="row-input"><input type="number" value="25.20" id="bag-tarifa-ent" oninput="calc()"></div>
+            <div class="row-input"><input type="number" id="bag-ofi-ent" class="result-input" readonly></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+            <div class="row-label">Saída</div>
+            <div class="row-input"><input type="number" id="bag-saida" placeholder="0" oninput="calc()"></div>
+            <div class="row-input"><input type="number" value="26.10" id="bag-tarifa-sai" oninput="calc()"></div>
+            <div class="row-input"><input type="number" id="bag-ofi-sai" class="result-input" readonly></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr">
+            <div class="row-label">Estoque Bags</div>
+            <div class="row-input"><input type="number" id="bag-estoque-atual" class="result-input" readonly></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr">
+            <div class="row-label">Saldo</div>
+            <div class="row-input"><input type="number" id="bag-saldo" class="result-input" readonly></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+            <div class="row-label">Verticalizados</div>
+            <div class="row-input"><input type="number" id="bag-vert" placeholder="auto"></div>
+            <div class="row-input"><input type="number" value="67.50" id="bag-tarifa-vert" oninput="calc()"></div>
+            <div class="row-input"><input type="number" id="bag-ofi-vert" class="result-input" readonly></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+            <div class="row-label">Horizontalizados</div>
+            <div class="row-input"><input type="number" id="bag-horiz" placeholder="auto"></div>
+            <div class="row-input"><input type="number" value="36" id="bag-tarifa-horiz" oninput="calc()"></div>
+            <div class="row-input"><input type="number" id="bag-ofi-horiz" class="result-input" readonly></div>
+          </div>
+        </div>
+        <div style="border-left:1px solid var(--border)">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface2)">Rework</div>
+          <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+            <div class="row-label bold">Entrada Rework</div>
+            <div class="row-input"><input type="number" id="bag-rew-ent" placeholder="0" oninput="calc()"></div>
+            <div class="row-input"><input type="number" value="25.20" id="bag-rew-tarifa-ent" oninput="calc()"></div>
+            <div class="row-input"><input type="number" id="bag-rew-ofi-ent" class="result-input" readonly></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+            <div class="row-label bold">Saída Rework</div>
+            <div class="row-input"><input type="number" id="bag-rew-sai" placeholder="0" oninput="calc()"></div>
+            <div class="row-input"><input type="number" value="26.10" id="bag-rew-tarifa-sai" oninput="calc()"></div>
+            <div class="row-input"><input type="number" id="bag-rew-ofi-sai" class="result-input" readonly></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr">
+            <div class="row-label">Estoque Rework</div>
+            <div class="row-input"><input type="number" id="bag-rew-estoque" placeholder="0" oninput="calc()"></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr">
+            <div class="row-label">Saldo do Rework</div>
+            <div class="row-input"><input type="number" id="bag-rew-saldo" class="result-input" readonly></div>
+          </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr">
+            <div class="row-label">Saldo c/ Rework</div>
+            <div class="row-input"><input type="number" id="bag-saldo-rew" class="result-input" readonly></div>
+          </div>
+          <div class="input-row highlight" style="grid-template-columns:160px 1fr">
+            <div class="row-label bold">Pico</div>
+            <div class="row-input"><input type="number" id="bag-pico" class="result-input highlight-input" readonly></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SERVIÇOS EXTRAS ── -->
+  <div style="margin-bottom:14px">
+    <div class="section-head" style="background:#3a1a5c">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      SERVIÇOS EXTRAS
+    </div>
+    <div style="background:var(--surf-light);border:1px solid var(--brd-light);border-top:none;border-radius:0 0 var(--r2) var(--r2)">
+
+      <!-- Abas -->
+      <div style="display:flex;border-bottom:1px solid var(--brd-light);overflow-x:auto">
+        <button class="sx-tab active" onclick="sxTab(0)" data-tab="0">Horas Extras</button>
+        <button class="sx-tab" onclick="sxTab(1)" data-tab="1">Mão de Obra Terceira</button>
+        <button class="sx-tab" onclick="sxTab(2)" data-tab="2">Operação na Fábrica</button>
+        <button class="sx-tab" onclick="sxTab(3)" data-tab="3">Compras de Terceiros</button>
+      </div>
+
+      <!-- Painel de cada aba -->
+      <div id="sx-panel-0" class="sx-panel">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;font-size:10px;font-weight:700;color:var(--txt3-light);text-transform:uppercase;letter-spacing:.07em;padding:6px 12px;background:var(--surf2-light)">
+          <div>Descrição</div><div style="text-align:right">Qtd / Horas</div><div style="text-align:right">Valor Unit. R$</div><div style="text-align:right">Total R$</div>
+        </div>
+        <div id="sx-rows-0"></div>
+        <div style="padding:8px 12px;border-top:1px solid var(--brd-light);display:flex;align-items:center;justify-content:space-between">
+          <button class="btn btn-outline" style="font-size:11px;padding:4px 10px" onclick="sxAddRow(0)">+ Adicionar linha</button>
+          <div style="font-size:12px;font-weight:700;color:#3a1a5c">Total: <span id="sx-total-0" style="font-family:var(--mono)">R$ 0,00</span></div>
+        </div>
+      </div>
+
+      <div id="sx-panel-1" class="sx-panel" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;font-size:10px;font-weight:700;color:var(--txt3-light);text-transform:uppercase;letter-spacing:.07em;padding:6px 12px;background:var(--surf2-light)">
+          <div>Descrição</div><div style="text-align:right">Qtd</div><div style="text-align:right">Valor Unit. R$</div><div style="text-align:right">Total R$</div>
+        </div>
+        <div id="sx-rows-1"></div>
+        <div style="padding:8px 12px;border-top:1px solid var(--brd-light);display:flex;align-items:center;justify-content:space-between">
+          <button class="btn btn-outline" style="font-size:11px;padding:4px 10px" onclick="sxAddRow(1)">+ Adicionar linha</button>
+          <div style="font-size:12px;font-weight:700;color:#3a1a5c">Total: <span id="sx-total-1" style="font-family:var(--mono)">R$ 0,00</span></div>
+        </div>
+      </div>
+
+      <div id="sx-panel-2" class="sx-panel" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;font-size:10px;font-weight:700;color:var(--txt3-light);text-transform:uppercase;letter-spacing:.07em;padding:6px 12px;background:var(--surf2-light)">
+          <div>Descrição</div><div style="text-align:right">Qtd</div><div style="text-align:right">Valor Unit. R$</div><div style="text-align:right">Total R$</div>
+        </div>
+        <div id="sx-rows-2"></div>
+        <div style="padding:8px 12px;border-top:1px solid var(--brd-light);display:flex;align-items:center;justify-content:space-between">
+          <button class="btn btn-outline" style="font-size:11px;padding:4px 10px" onclick="sxAddRow(2)">+ Adicionar linha</button>
+          <div style="font-size:12px;font-weight:700;color:#3a1a5c">Total: <span id="sx-total-2" style="font-family:var(--mono)">R$ 0,00</span></div>
+        </div>
+      </div>
+
+      <div id="sx-panel-3" class="sx-panel" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;font-size:10px;font-weight:700;color:var(--txt3-light);text-transform:uppercase;letter-spacing:.07em;padding:6px 12px;background:var(--surf2-light)">
+          <div>Descrição</div><div style="text-align:right">Qtd</div><div style="text-align:right">Valor Unit. R$</div><div style="text-align:right">Total R$</div>
+        </div>
+        <div id="sx-rows-3"></div>
+        <div style="padding:8px 12px;border-top:1px solid var(--brd-light);display:flex;align-items:center;justify-content:space-between">
+          <button class="btn btn-outline" style="font-size:11px;padding:4px 10px" onclick="sxAddRow(3)">+ Adicionar linha</button>
+          <div style="font-size:12px;font-weight:700;color:#3a1a5c">Total: <span id="sx-total-3" style="font-family:var(--mono)">R$ 0,00</span></div>
+        </div>
+      </div>
+
+      <!-- Resumo total extras -->
+      <div style="display:flex;justify-content:flex-end;align-items:center;gap:16px;padding:10px 14px;background:var(--surf2-light);border-top:1px solid var(--brd-light)">
+        <span style="font-size:11px;font-weight:700;color:var(--txt2-light);text-transform:uppercase;letter-spacing:.07em">Total Serviços Extras</span>
+        <span id="sx-grand" style="font-size:16px;font-weight:700;font-family:var(--mono);color:#3a1a5c">R$ 0,00</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total geral -->
+  <div style="background:var(--accent);border-radius:var(--r2);padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
+    <div style="color:rgba(255,255,255,.7);font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase">Total Apurado (OFI)</div>
+    <div style="color:#fff;font-size:26px;font-weight:700;font-family:var(--mono);letter-spacing:-1px" id="grand-total-form">R$ 0,00</div>
+  </div>
+</div>
+
+<!-- ═══ HISTÓRICO ═══ -->
+<div class="view" id="view-historico">
+  <div class="ph">
+    <div><div class="ph-title">Histórico</div><div class="ph-sub">Apurações salvas</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-primary" onclick="nav('lancar')">Nova Apuração</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding:0;overflow-x:auto">
+      <table class="sum-table sum-table-light">
+        <thead>
+          <tr><th>Período</th><th>Cliente</th><th>CNPJ</th><th class="right">Pico Caixas</th><th class="right">Pico Bags</th><th class="right">Seguro Base</th><th class="right">Total OFI</th><th></th></tr>
+        </thead>
+        <tbody id="hist-tbody">
+          <tr><td colspan="8" style="text-align:center;color:var(--txt3-light);padding:20px">Nenhuma apuração salva</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- Modal limpar -->
+<div id="modal-bg">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Limpar todos os dados?</div>
+      <button onclick="document.getElementById('modal-bg').classList.remove('open')" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--text2)">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="warn-box"><strong>Atenção:</strong> Todos os dados salvos serão apagados permanentemente.</div>
+      <p style="font-size:12px;color:var(--text2)">Esta ação remove todo o histórico de apurações do armazenamento local.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-bg').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmarLimpar()">Sim, limpar tudo</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast">✓ <span id="toast-msg">Salvo!</span></div>
+
+<script>
+const KEY = 'apuracao_ofi_v2';
+
+// ─── Helpers ────────────────────────────────────────────────────
+function fmtBRL(v){ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0) }
+function n(id){ return parseFloat(document.getElementById(id)?.value)||0 }
+function set(id,v){ const el=document.getElementById(id); if(el) el.value=v%1===0?v:parseFloat(v.toFixed(2)) }
+function setN(id,v){ const el=document.getElementById(id); if(el) el.value=v!==0?parseFloat(v.toFixed(2)):'' }
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]') }catch{ return [] } }
+function save(data){ localStorage.setItem(KEY,JSON.stringify(data)) }
+
+function toast(msg,type='ok'){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.style.background=type==='ok'?'var(--accent)':'var(--red)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ─── Navigation ─────────────────────────────────────────────────
+function nav(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  const map={dashboard:0,lancar:1,historico:2};
+  document.querySelectorAll('.nav-item')[map[id]]?.classList.add('active');
+  if(id==='dashboard') renderDash();
+  if(id==='historico') renderHist();
+  if(id==='lancar'){
+    // Carrega extras do último registro salvo (se existir)
+    const all=load();
+    if(all.length && all[all.length-1].extras){
+      sxLoadData(all[all.length-1].extras);
+    }
+  }
+}
+
+// ─── Serviços Extras ─────────────────────────────────────────────
+const SX_NAMES = ['Horas Extras','Mão de Obra Terceira','Operação na Fábrica','Compras de Terceiros'];
+let sxData = [[],[],[],[]]; // rows per tab: [{desc, qtd, valor}]
+
+function sxTab(idx){
+  document.querySelectorAll('.sx-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  document.querySelectorAll('.sx-panel').forEach((p,i)=>p.style.display=i===idx?'block':'none');
+}
+
+function sxAddRow(tab, desc='', qtd='', valor=''){
+  const container = document.getElementById('sx-rows-'+tab);
+  const rowId = 'sx-r-'+tab+'-'+Date.now();
+  const div = document.createElement('div');
+  div.className='sx-row'; div.id=rowId;
+  div.innerHTML=`
+    <input type="text" placeholder="Descrição..." value="${desc}" oninput="sxCalc(${tab})">
+    <input type="number" placeholder="0" value="${qtd}" oninput="sxCalc(${tab})" style="border-left:1px solid var(--brd-light)">
+    <input type="number" placeholder="0,00" value="${valor}" step="0.01" oninput="sxCalc(${tab})">
+    <div class="sx-total-cell" id="${rowId}-tot">—</div>
+    <button class="sx-del" onclick="sxDelRow('${rowId}',${tab})" title="Remover">✕</button>`;
+  container.appendChild(div);
+  sxCalc(tab);
+}
+
+function sxDelRow(rowId, tab){
+  document.getElementById(rowId)?.remove();
+  sxCalc(tab);
+}
+
+function sxCalc(tab){
+  const rows = document.querySelectorAll('#sx-rows-'+tab+' .sx-row');
+  let tabTotal = 0;
+  rows.forEach(row=>{
+    const inputs = row.querySelectorAll('input');
+    const qtd = parseFloat(inputs[1].value)||0;
+    const val = parseFloat(inputs[2].value)||0;
+    const tot = qtd*val;
+    tabTotal += tot;
+    const cell = row.querySelector('[id$="-tot"]');
+    if(cell) cell.textContent = tot>0 ? fmtBRL(tot) : '—';
+  });
+  document.getElementById('sx-total-'+tab).textContent = fmtBRL(tabTotal);
+  // atualiza grand extras e total geral
+  let grand=0;
+  for(let i=0;i<4;i++){
+    const el=document.getElementById('sx-total-'+i);
+    if(el) grand+=parseFloat(el.textContent.replace(/[^\d,]/g,'').replace(',','.'))||0;
+  }
+  document.getElementById('sx-grand').textContent=fmtBRL(grand);
+  calc(); // recalcula grand total
+}
+
+function sxTotalAll(){
+  let t=0;
+  for(let i=0;i<4;i++){
+    document.querySelectorAll('#sx-rows-'+i+' .sx-row').forEach(row=>{
+      const inputs=row.querySelectorAll('input');
+      t+=(parseFloat(inputs[1].value)||0)*(parseFloat(inputs[2].value)||0);
+    });
+  }
+  return t;
+}
+
+function sxGetData(){
+  const tabs=[];
+  for(let i=0;i<4;i++){
+    const rows=[];
+    document.querySelectorAll('#sx-rows-'+i+' .sx-row').forEach(row=>{
+      const inputs=row.querySelectorAll('input');
+      rows.push({desc:inputs[0].value, qtd:parseFloat(inputs[1].value)||0, valor:parseFloat(inputs[2].value)||0});
+    });
+    tabs.push(rows);
+  }
+  return tabs;
+}
+
+function sxLoadData(tabs){
+  if(!tabs) return;
+  for(let i=0;i<4;i++){
+    document.getElementById('sx-rows-'+i).innerHTML='';
+    (tabs[i]||[]).forEach(r=>sxAddRow(i,r.desc,r.qtd||'',r.valor||''));
+  }
+}
+
+// ─── Calc (live) ─────────────────────────────────────────────────
+function calc(){
+  // EMBALAGENS
+  const embEst=n('emb-estoque'), embEnt=n('emb-entrada'), embSai=n('emb-saida');
+  const embEstAtual=embEst+embEnt-embSai;
+  const embSaldo=embEstAtual;
+  setN('emb-estoque-atual',embEstAtual);
+  setN('emb-saldo',embSaldo);
+  setN('emb-ofi-ent', embEnt*n('emb-tarifa-ent'));
+  setN('emb-ofi-sai', embSai*n('emb-tarifa-sai'));
+  setN('emb-ofi-final', embSaldo*n('emb-tarifa-final'));
+
+  // CAIXAS
+  const cxEst=n('cx-estoque'), cxEnt=n('cx-entrada'), cxSai=n('cx-saida');
+  const cxEstAtual=cxEst+cxEnt-cxSai;
+  const cxSaldo=cxEstAtual;
+  const cxRewEnt=n('cx-rew-ent'), cxRewEst=n('cx-rew-estoque');
+  const cxSaldoRew=cxSaldo+cxRewEnt+cxRewEst;
+  const cxPico=Math.max(cxSaldo, cxSaldoRew);
+  setN('cx-estoque-atual',cxEstAtual);
+  setN('cx-saldo',cxSaldo);
+  setN('cx-saldo-rew',cxSaldoRew);
+  setN('cx-pico',cxPico);
+  setN('cx-ofi-ent', cxEnt*n('cx-tarifa-ent'));
+  setN('cx-ofi-sai', cxSai*n('cx-tarifa-sai'));
+  setN('cx-rew-ofi-ent', cxRewEnt*n('cx-rew-tarifa-ent'));
+  setN('cx-ofi-pico', cxPico*n('cx-tarifa-pico'));
+
+  // BAGS
+  const bagEst=n('bag-estoque'), bagEnt=n('bag-entrada'), bagSai=n('bag-saida');
+  const bagEstAtual=bagEst+bagEnt-bagSai;
+  const bagSaldo=bagEstAtual;
+  const bagRewEnt=n('bag-rew-ent'), bagRewSai=n('bag-rew-sai'), bagRewEst=n('bag-rew-estoque');
+  const bagRewSaldo=bagRewEst+bagRewEnt-bagRewSai;
+  const bagSaldoRew=bagSaldo+bagRewSaldo;
+  const bagPico=bagSaldoRew;
+  // Verticalizados / Horizontalizados: sempre automático (÷2), editável manualmente
+  const vertEl=document.getElementById('bag-vert');
+  const horizEl=document.getElementById('bag-horiz');
+  if(vertEl.dataset.manual!=='1') { vertEl.value = bagSaldoRew ? Math.round(bagSaldoRew/2) : ''; }
+  if(horizEl.dataset.manual!=='1') { const v=Math.round(bagSaldoRew/2); horizEl.value = bagSaldoRew ? (bagSaldoRew-v) : ''; }
+  const bagVert=n('bag-vert');
+  const bagHoriz=n('bag-horiz');
+  setN('bag-estoque-atual',bagEstAtual);
+  setN('bag-saldo',bagSaldo);
+  setN('bag-rew-saldo',bagRewSaldo);
+  setN('bag-saldo-rew',bagSaldoRew);
+  setN('bag-pico',bagPico);
+  setN('bag-ofi-ent', bagEnt*n('bag-tarifa-ent'));
+  setN('bag-ofi-sai', bagSai*n('bag-tarifa-sai'));
+  setN('bag-rew-ofi-ent', bagRewEnt*n('bag-rew-tarifa-ent'));
+  setN('bag-rew-ofi-sai', bagRewSai*n('bag-rew-tarifa-sai'));
+  setN('bag-ofi-vert', bagVert*n('bag-tarifa-vert'));
+  setN('bag-ofi-horiz', bagHoriz*n('bag-tarifa-horiz'));
+
+  // OUTROS
+  const segBase=n('seg-base'), segAliq=n('seg-aliq');
+  const segOfi=segBase*(segAliq/100);
+  const strOfi=n('str-qtd')*n('str-tarifa');
+  const estOfi=n('est-qtd')*n('est-tarifa');
+  const remOfi=n('rem-qtd')*n('rem-tarifa');
+  setN('seg-ofi',segOfi);
+  setN('str-ofi',strOfi);
+  setN('est-ofi',estOfi);
+  setN('rem-ofi',remOfi);
+  const outrosTotal=segOfi+strOfi+estOfi+remOfi;
+  setN('outros-total',outrosTotal);
+
+  // GRAND TOTAL — igual ao Resumo da planilha:
+  // Emb Entrada OFI + Emb Saída OFI + Emb Saldo OFI
+  // + Cx Entrada OFI + Cx Saída OFI + Cx EntradaRework OFI + Cx Pico OFI
+  // + Bag Entrada OFI + Bag Saída OFI + Bag EntRew OFI + Bag SaiRew OFI + Bag Vert OFI + Bag Horiz OFI
+  // + Seguro OFI + Estufamento OFI + Stretchamento OFI + Remontagem OFI
+  const grand =
+    n('emb-ofi-ent') + n('emb-ofi-sai') + n('emb-ofi-final') +
+    n('cx-ofi-ent') + n('cx-ofi-sai') + n('cx-rew-ofi-ent') + n('cx-ofi-pico') +
+    n('bag-ofi-ent') + n('bag-ofi-sai') + n('bag-rew-ofi-ent') + n('bag-rew-ofi-sai') +
+    n('bag-ofi-vert') + n('bag-ofi-horiz') +
+    n('seg-ofi') + n('est-ofi') + n('str-ofi') + n('rem-ofi') +
+    sxTotalAll();
+  document.getElementById('grand-total-form').textContent = fmtBRL(grand);
+}
+
+// ─── Save ────────────────────────────────────────────────────────
+function salvar(){
+  const cliente=document.getElementById('f-cliente').value.trim();
+  const periodo=document.getElementById('f-periodo').value.trim();
+  if(!periodo){ toast('Preencha o período','err'); return; }
+
+  const record={
+    id:'apr_'+Date.now(),
+    cliente:cliente||'—',
+    cnpj:document.getElementById('f-cnpj').value,
+    periodo,
+    savedAt:new Date().toISOString(),
+
+    // Embalagens
+    emb:{ estoque:n('emb-estoque'), entrada:n('emb-entrada'), saida:n('emb-saida'),
+          saldo:n('emb-saldo'), tarifa:n('emb-tarifa-final'),
+          ofi_saldo:n('emb-ofi-final'), ofi_ent:n('emb-ofi-ent'), ofi_sai:n('emb-ofi-sai') },
+    // Caixas
+    cx:{ estoque:n('cx-estoque'), entrada:n('cx-entrada'), saida:n('cx-saida'),
+         saldo:n('cx-saldo'), rew_ent:n('cx-rew-ent'), rew_estoque:n('cx-rew-estoque'),
+         saldo_rew:n('cx-saldo-rew'), pico:n('cx-pico'), tarifa_pico:n('cx-tarifa-pico'),
+         ofi_ent:n('cx-ofi-ent'), ofi_sai:n('cx-ofi-sai'), ofi_rew_ent:n('cx-rew-ofi-ent'),
+         ofi_pico:n('cx-ofi-pico') },
+    // Bags
+    bag:{ estoque:n('bag-estoque'), entrada:n('bag-entrada'), saida:n('bag-saida'),
+          saldo:n('bag-saldo'), rew_ent:n('bag-rew-ent'), rew_sai:n('bag-rew-sai'),
+          rew_estoque:n('bag-rew-estoque'), rew_saldo:n('bag-rew-saldo'),
+          saldo_rew:n('bag-saldo-rew'), pico:n('bag-pico'),
+          vert:n('bag-vert'), horiz:n('bag-horiz'),
+          tarifa_vert:n('bag-tarifa-vert'), tarifa_horiz:n('bag-tarifa-horiz'),
+          ofi_ent:n('bag-ofi-ent'), ofi_sai:n('bag-ofi-sai'),
+          ofi_rew_ent:n('bag-rew-ofi-ent'), ofi_rew_sai:n('bag-rew-ofi-sai'),
+          ofi_vert:n('bag-ofi-vert'), ofi_horiz:n('bag-ofi-horiz') },
+    // Outros
+    seg:{ base:n('seg-base'), aliq:n('seg-aliq'), ofi:n('seg-ofi') },
+    str:{ qtd:n('str-qtd'), tarifa:n('str-tarifa'), ofi:n('str-ofi') },
+    est:{ qtd:n('est-qtd'), tarifa:n('est-tarifa'), ofi:n('est-ofi') },
+    rem:{ qtd:n('rem-qtd'), tarifa:n('rem-tarifa'), ofi:n('rem-ofi') },
+    extras: sxGetData(),
+  };
+  record.total =
+    record.emb.ofi_ent + record.emb.ofi_sai + record.emb.ofi_saldo +
+    record.cx.ofi_ent + record.cx.ofi_sai + record.cx.ofi_rew_ent + record.cx.ofi_pico +
+    record.bag.ofi_ent + record.bag.ofi_sai + record.bag.ofi_rew_ent + record.bag.ofi_rew_sai +
+    record.bag.ofi_vert + record.bag.ofi_horiz +
+    record.seg.ofi + record.est.ofi + record.str.ofi + record.rem.ofi +
+    sxTotalAll();
+
+  const all=load();
+  all.push(record);
+  save(all);
+  toast('Apuração salva! Dashboard atualizado.');
+  nav('dashboard');
+}
+
+// ─── Limpar form ─────────────────────────────────────────────────
+function limparForm(){
+  document.querySelectorAll('#view-lancar input[type=number]').forEach(el=>{
+    if(!el.readOnly && el.id && !el.id.includes('tarifa')) el.value='';
+  });
+  // Limpa extras
+  for(let i=0;i<4;i++){
+    document.getElementById('sx-rows-'+i).innerHTML='';
+    document.getElementById('sx-total-'+i).textContent='R$ 0,00';
+  }
+  document.getElementById('sx-grand').textContent='R$ 0,00';
+  calc();
+}
+
+// ─── Dashboard render ─────────────────────────────────────────────
+function renderDash(){
+  const all=load();
+  if(!all.length){
+    document.getElementById('dash-periodo').textContent='Nenhum dado lançado ainda';
+    document.getElementById('kpi-total').textContent='R$ 0';
+    document.getElementById('kpi-armaz').textContent='R$ 0';
+    document.getElementById('kpi-seguro').textContent='R$ 0';
+    document.getElementById('kpi-cx-pico').textContent='0';
+    document.getElementById('kpi-bag-pico').textContent='0';
+    document.getElementById('dash-bars').innerHTML='<div style="color:var(--txt3-dark);font-size:12px;padding:8px 0">Nenhum dado lançado</div>';
+    document.getElementById('total-box').style.display='none';
+    document.getElementById('sum-tbody').innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--txt3-dark);padding:16px">Nenhum dado</td></tr>';
+    ['dash-emb','dash-cx','dash-bag'].forEach(id=>{ document.getElementById(id).innerHTML='<div style="color:var(--txt3-dark);font-size:12px">—</div>'; });
+    return;
+  }
+
+  // Last record
+  const r=all[all.length-1];
+  document.getElementById('dash-periodo').textContent=`${r.cliente} · ${r.periodo}`;
+  const total=r.total||0;
+
+  // Extras — recalcula sempre
+  const extras = r.extras || [[],[],[],[]];
+  let sxGrandForKpi = 0;
+  extras.forEach(tab => tab.forEach(row => { sxGrandForKpi += (row.qtd||0)*(row.valor||0); }));
+
+  // OFI base = campos salvos sem extras
+  const ofiBase =
+    (r.emb.ofi_ent||0) + (r.emb.ofi_sai||0) + (r.emb.ofi_saldo||0) +
+    (r.cx.ofi_ent||0) + (r.cx.ofi_sai||0) + (r.cx.ofi_rew_ent||0) + (r.cx.ofi_pico||0) +
+    (r.bag.ofi_ent||0) + (r.bag.ofi_sai||0) + (r.bag.ofi_rew_ent||0) + (r.bag.ofi_rew_sai||0) +
+    (r.bag.ofi_vert||0) + (r.bag.ofi_horiz||0) +
+    (r.seg.ofi||0) + (r.est.ofi||0) + (r.str.ofi||0) + (r.rem.ofi||0);
+  // Tabela e KPI exibem só OFI base
+  const totalComExtras = ofiBase;
+  const totalGeral = ofiBase + sxGrandForKpi;
+
+  const armazTotal=r.cx.ofi_pico+r.bag.ofi_vert+r.bag.ofi_horiz+r.emb.ofi_saldo;
+  document.getElementById('kpi-total').textContent=fmtBRL(ofiBase + sxGrandForKpi);
+  document.getElementById('kpi-armaz').textContent=fmtBRL(armazTotal);
+  document.getElementById('kpi-seguro').textContent=fmtBRL(r.seg.ofi);
+  document.getElementById('kpi-cx-pico').textContent=r.cx.pico.toLocaleString('pt-BR');
+  document.getElementById('kpi-cx-pico-sub').textContent='un. — '+fmtBRL(r.cx.ofi_pico);
+  document.getElementById('kpi-bag-pico').textContent=r.bag.pico.toLocaleString('pt-BR');
+  document.getElementById('kpi-bag-pico-sub').textContent='un. — '+fmtBRL(r.bag.ofi_vert+r.bag.ofi_horiz);
+
+  // Bars — montado aqui, renderizado após extras (com serviços extras incluídos)
+  const recOFI = (r.emb.ofi_ent||0) + (r.cx.ofi_ent||0) + (r.bag.ofi_ent||0);
+  const expOFI = (r.emb.ofi_sai||0) + (r.cx.ofi_sai||0) + (r.bag.ofi_sai||0);
+  const services=[
+    {name:'Recebimento', val:recOFI, color:'#0ea5e9'},
+    {name:'Expedição', val:expOFI, color:'#06b6d4'},
+    {name:'Caixas (Pico)', val:r.cx.ofi_pico, color:'#3b82f6'},
+    {name:'Bags Vert.', val:r.bag.ofi_vert, color:'#92400e'},
+    {name:'Bags Horiz.', val:r.bag.ofi_horiz, color:'#f07030'},
+    {name:'Seguro', val:r.seg.ofi, color:'#f07030'},
+    {name:'Embalagens (Saldo)', val:r.emb.ofi_saldo, color:'#c4b800'},
+    {name:'Estufamento', val:r.est.ofi, color:'#2d5c40'},
+    {name:'Stretchamento', val:r.str.ofi, color:'#555'},
+    {name:'Remontagem Bags', val:r.rem.ofi, color:'#888'},
+  ].filter(s=>s.val>0);
+  document.getElementById('total-box').style.display='block';
+  document.getElementById('total-val').textContent=fmtBRL(ofiBase + sxGrandForKpi);
+
+  // Sum table
+  const recQtd = (r.emb.entrada||0) + (r.cx.entrada||0) + (r.bag.entrada||0);
+  const expQtd = (r.emb.saida||0)   + (r.cx.saida||0)   + (r.bag.saida||0);
+  const rows=[
+    ['Recebimento', recQtd, 'R$ 25,20', recOFI],
+    ['Expedição',   expQtd, 'R$ 26,10', expOFI],
+    ['Saldo Embalagens', r.emb.saldo, `R$ ${r.emb.tarifa.toFixed(2)}`, r.emb.ofi_saldo],
+    ['Caixas (Pico)', r.cx.pico, `R$ ${r.cx.tarifa_pico.toFixed(2)}`, r.cx.ofi_pico],
+    ['Bags Verticalizados', r.bag.vert, `R$ ${r.bag.tarifa_vert.toFixed(2)}`, r.bag.ofi_vert],
+    ['Bags Horizontalizados', r.bag.horiz, `R$ ${r.bag.tarifa_horiz.toFixed(2)}`, r.bag.ofi_horiz],
+    ['Seguro', '—', `${r.seg.aliq.toFixed(2)}%`, r.seg.ofi],
+    ['Estufamento', r.est.qtd, `R$ ${r.est.tarifa.toFixed(2)}`, r.est.ofi],
+    ['Stretchamento', r.str.qtd, `R$ ${r.str.tarifa.toFixed(2)}`, r.str.ofi],
+    ['Remontagem Bags', r.rem.qtd, `R$ ${r.rem.tarifa.toFixed(2)}`, r.rem.ofi],
+  ].filter(row=>row[3]>0);
+  document.getElementById('sum-tbody').innerHTML=
+    rows.map(([nm,q,t,v])=>`<tr><td>${nm}</td><td class="right mono">${typeof q==='number'?q.toLocaleString('pt-BR'):q}</td><td class="right mono">${t}</td><td class="right mono">${fmtBRL(v)}</td></tr>`).join('')+
+    `<tr><td colspan="3">TOTAL</td><td class="right mono">${fmtBRL(totalComExtras)}</td></tr>`;
+
+  // Estoque cards
+  function statRow(label,val,bold=false){
+    return `<div class="stat-row${bold?' bold':''}">
+      <span class="stat-lbl">${label}</span>
+      <span class="stat-val">${typeof val==='number'?val.toLocaleString('pt-BR'):val}</span>
+    </div>`;
+  }
+
+  document.getElementById('dash-emb').innerHTML=
+    statRow('Estoque Remanescente',r.emb.estoque)+
+    statRow('Entrada',r.emb.entrada)+
+    statRow('Saída',r.emb.saida)+
+    statRow('Estoque Atual',r.emb.estoque+r.emb.entrada-r.emb.saida)+
+    statRow('Saldo',r.emb.saldo,true);
+
+  document.getElementById('dash-cx').innerHTML=
+    statRow('Estoque Remanescente',r.cx.estoque)+
+    statRow('Entrada',r.cx.entrada)+
+    statRow('Saída',r.cx.saida)+
+    statRow('Saldo',r.cx.saldo)+
+    statRow('Saldo c/ Rework',r.cx.saldo_rew)+
+    statRow('Pico',r.cx.pico,true);
+
+  document.getElementById('dash-bag').innerHTML=
+    statRow('Estoque Remanescente',r.bag.estoque)+
+    statRow('Entrada',r.bag.entrada)+
+    statRow('Saída',r.bag.saida)+
+    statRow('Saldo',r.bag.saldo)+
+    statRow('Saldo c/ Rework',r.bag.saldo_rew)+
+    statRow('Pico',r.bag.pico,true);
+
+  // Serviços Extras no Dashboard
+  const SX_NAMES_DASH = ['Horas Extras','Mão de Obra Terceira','Operação na Fábrica','Compras de Terceiros'];
+  const sxGrandTotal = sxGrandForKpi;
+  document.getElementById('dash-sx-grand').textContent = fmtBRL(sxGrandTotal);
+  document.getElementById('dash-extras-card').style.display = sxGrandTotal > 0 ? 'block' : 'none';
+
+  // Renderiza aba ativa (padrão: primeira com dados, senão 0)
+  window._dashSxData = extras;
+  let defaultTab = extras.findIndex(t => t.length > 0 && t.some(r => (r.qtd||0)*(r.valor||0) > 0));
+  if(defaultTab < 0) defaultTab = 0;
+  dashSxTab(defaultTab);
+
+  // Adiciona extras nas barras
+  extras.forEach((tab, i) => {
+    const tabTotal = tab.reduce((s,row) => s + (row.qtd||0)*(row.valor||0), 0);
+    if(tabTotal > 0) services.push({name: SX_NAMES_DASH[i], val: tabTotal, color:'#7c3aed'});
+  });
+  const maxV2 = Math.max(...services.map(s=>s.val),1);
+  document.getElementById('dash-bars').innerHTML = services.map(s=>`
+    <div class="bar-item">
+      <div class="bar-name" title="${s.name}">${s.name}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(s.val/maxV2*100).toFixed(1)}%;background:${s.color}"></div></div>
+      <div class="bar-val">${fmtBRL(s.val)}</div>
+    </div>`).join('');
+}
+
+function dashSxTab(idx){
+  document.querySelectorAll('.dash-sx-btn').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  const SX_NAMES_DASH = ['Horas Extras','Mão de Obra Terceira','Operação na Fábrica','Compras de Terceiros'];
+  const extras = window._dashSxData || [[],[],[],[]];
+  const rows = extras[idx] || [];
+  let tabTotal = 0;
+  const container = document.getElementById('dash-sx-rows');
+  if(!rows.length || !rows.some(r=>(r.qtd||0)*(r.valor||0)>0)){
+    container.innerHTML=`<div style="padding:14px;color:var(--txt3-dark);font-size:12px;text-align:center">Nenhum lançamento</div>`;
+  } else {
+    container.innerHTML = rows.filter(r=>r.desc||r.qtd||r.valor).map(row => {
+      const tot = (row.qtd||0)*(row.valor||0);
+      tabTotal += tot;
+      return `<div style="display:grid;grid-template-columns:1fr 120px 120px 130px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--brd-dark);font-size:12px">
+        <div style="color:var(--txt-dark)">${row.desc||'—'}</div>
+        <div style="text-align:right;font-family:var(--mono);color:var(--txt2-dark)">${(row.qtd||0).toLocaleString('pt-BR')}</div>
+        <div style="text-align:right;font-family:var(--mono);color:var(--txt2-dark)">${fmtBRL(row.valor||0)}</div>
+        <div style="text-align:right;font-family:var(--mono);font-weight:700;color:#c4b5fd">${fmtBRL(tot)}</div>
+      </div>`;
+    }).join('');
+    tabTotal = rows.reduce((s,r)=>s+(r.qtd||0)*(r.valor||0),0);
+  }
+  document.getElementById('dash-sx-tab-label').textContent = SX_NAMES_DASH[idx];
+  document.getElementById('dash-sx-tab-total').textContent = fmtBRL(tabTotal);
+}
+
+// ─── Histórico ────────────────────────────────────────────────────
+function renderHist(){
+  const all=load();
+  if(!all.length){ document.getElementById('hist-tbody').innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--txt3-light);padding:20px">Nenhuma apuração salva</td></tr>'; return; }
+  document.getElementById('hist-tbody').innerHTML=[...all].reverse().map(r=>`
+    <tr>
+      <td>${r.periodo}</td>
+      <td>${r.cliente}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${r.cnpj||'—'}</td>
+      <td class="right mono">${r.cx.pico.toLocaleString('pt-BR')}</td>
+      <td class="right mono">${r.bag.pico.toLocaleString('pt-BR')}</td>
+      <td class="right mono">${fmtBRL(r.seg.base)}</td>
+      <td class="right mono" style="font-weight:700;color:var(--accent)">${fmtBRL(r.total)}</td>
+      <td><button class="btn btn-outline" style="font-size:11px;padding:4px 8px;" onclick="deleteRec('${r.id}')">Excluir</button></td>
+    </tr>`).join('');
+}
+
+function deleteRec(id){
+  save(load().filter(r=>r.id!==id));
+  renderHist();
+  renderDash();
+  toast('Registro excluído','err');
+}
+
+// ─── Clear ────────────────────────────────────────────────────────
+function openClear(){ document.getElementById('modal-bg').classList.add('open') }
+function confirmarLimpar(){
+  localStorage.removeItem(KEY);
+  document.getElementById('modal-bg').classList.remove('open');
+  toast('Dados limpos','err');
+  renderDash();
+  renderHist();
+}
+
+// ─── Downloads (usa a capacidade "downloads" do Artifact; sem ela, cai para o método antigo) ───
+let downloadsNS = null;
+async function baixarArquivo(filename, dataStr, mime){
+  if(downloadsNS){
+    try{ await downloadsNS.save({ filename, data: dataStr }); toast('✓ Arquivo salvo.'); return true; }
+    catch(e){ toast(e && e.code==='declined' ? 'Download cancelado.' : '⚠ Não foi possível salvar o arquivo aqui.', 'err'); return false; }
+  }
+  const blob=new Blob(['\uFEFF'+dataStr],{type:(mime||'text/plain')+';charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+  toast('✓ Arquivo salvo.');
+  return true;
+}
+
+// ─── Export CSV ───────────────────────────────────────────────────
+function exportCSV(){
+  const all=load();
+  if(!all.length){ toast('Nenhum dado para exportar','err'); return; }
+  const h=['Período','Cliente','CNPJ','Emb Saldo','Emb OFI','Cx Pico','Cx OFI','Bag Pico','Bag OFI Vert','Bag OFI Horiz','Seguro Base','Seguro OFI','Estufamento Qtd','Estufamento OFI','Stretchamento OFI','Remontagem OFI','Total OFI'];
+  const rows=all.map(r=>[r.periodo,r.cliente,r.cnpj,r.emb.saldo,r.emb.ofi_saldo.toFixed(2),r.cx.pico,r.cx.ofi_pico.toFixed(2),r.bag.pico,r.bag.ofi_vert.toFixed(2),r.bag.ofi_horiz.toFixed(2),r.seg.base,r.seg.ofi.toFixed(2),r.est.qtd,r.est.ofi.toFixed(2),r.str.ofi.toFixed(2),r.rem.ofi.toFixed(2),r.total.toFixed(2)]);
+  const csv=[h,...rows].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  baixarArquivo('apuracao_ofi.csv', csv, 'text/csv');
+}
+
+// ─── Recalcula totais de registros salvos (corrige dados antigos) ─
+function recalcSavedTotals(){
+  const all = load();
+  let changed = false;
+  all.forEach(r => {
+    const correct =
+      (r.emb.ofi_ent||0) + (r.emb.ofi_sai||0) + (r.emb.ofi_saldo||0) +
+      (r.cx.ofi_ent||0) + (r.cx.ofi_sai||0) + (r.cx.ofi_rew_ent||0) + (r.cx.ofi_pico||0) +
+      (r.bag.ofi_ent||0) + (r.bag.ofi_sai||0) + (r.bag.ofi_rew_ent||0) + (r.bag.ofi_rew_sai||0) +
+      (r.bag.ofi_vert||0) + (r.bag.ofi_horiz||0) +
+      (r.seg.ofi||0) + (r.est.ofi||0) + (r.str.ofi||0) + (r.rem.ofi||0);
+    if(Math.abs(r.total - correct) > 0.01){ r.total = correct; changed = true; }
+  });
+  if(changed) save(all);
+}
+
+// ─── Init ────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async ()=>{
+  try{
+    if(window.claude && typeof window.claude.use === 'function'){
+      downloadsNS = await window.claude.use('downloads');
+    }
+  }catch(e){ downloadsNS = null; }
+  recalcSavedTotals();
+  // Inicia cada aba com uma linha vazia
+  for(let i=0;i<4;i++) sxAddRow(i);
+  calc();
+  renderDash();
+
+  // Listener em todos os inputs EXCETO vert/horiz (tratados separadamente)
+  document.querySelectorAll('#view-lancar input').forEach(el=>{
+    if(el.id==='bag-vert' || el.id==='bag-horiz') return;
+    el.addEventListener('input', calc);
+  });
+
+  // Vert: marca manual ANTES de calc() rodar
+  document.getElementById('bag-vert').addEventListener('input', function(){
+    this.dataset.manual='1';
+    calc();
+  });
+  // Horiz: marca manual ANTES de calc() rodar
+  document.getElementById('bag-horiz').addEventListener('input', function(){
+    this.dataset.manual='1';
+    calc();
+  });
+
+  // Reset flags ao limpar
+  const origLimpar = limparForm;
+  window.limparForm = function(){
+    origLimpar();
+    document.getElementById('bag-vert').dataset.manual='';
+    document.getElementById('bag-horiz').dataset.manual='';
+  };
+});
+</script>
