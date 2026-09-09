@@ -174,10 +174,31 @@ textarea.paste-area{
   .panel{border:none;padding:0;}
   .invoice-sheet{box-shadow:none;}
 }
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;max-width:400px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4);}
+.modal-msg{font-size:14px;line-height:1.5;color:var(--text);margin-bottom:18px;}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;}
+.toast-stack{position:fixed;top:16px;right:16px;z-index:10000;display:flex;flex-direction:column;gap:8px;max-width:320px;}
+.toast{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--text);box-shadow:0 6px 20px rgba(0,0,0,.3);}
+.toast.warn{border-left-color:var(--orange);}
+.toast.err{border-left-color:var(--red);}
 </style>
 </head>
 <body>
 <div class="page">
+
+  <div class="modal-overlay no-print" id="modalOverlay">
+    <div class="modal-box">
+      <div class="modal-msg" id="modalMsg"></div>
+      <div class="modal-actions">
+        <button class="mini-btn" id="modalCancelBtn">Cancelar</button>
+        <button class="mini-btn green" id="modalOkBtn">Confirmar</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast-stack no-print" id="toastStack"></div>
 
   <div class="top-header">
     <div class="title-block">
@@ -510,6 +531,39 @@ const STORAGE_KEY = 'microware_recebimento_diario_v1';
 let STATE = { records: [] };
 let charts = {};
 let tableRenderLimit = 200;
+
+/* ======================================================================
+   MODAL DE CONFIRMAÇÃO E TOAST — o artefato roda num iframe isolado que
+   bloqueia confirm()/alert() nativos do navegador (não mostram nada e
+   retornam false), então usamos um modal próprio na página.
+   ====================================================================== */
+function customConfirm(message) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('modalOverlay');
+    document.getElementById('modalMsg').textContent = message;
+    overlay.classList.add('show');
+    const okBtn = document.getElementById('modalOkBtn');
+    const cancelBtn = document.getElementById('modalCancelBtn');
+    function cleanup(result) {
+      overlay.classList.remove('show');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      resolve(result);
+    }
+    function onOk() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+  });
+}
+function showToast(message, type) {
+  const stack = document.getElementById('toastStack');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = message;
+  stack.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
 
 /* ======================================================================
    PARSERS — formato numérico/data brasileiro
@@ -1039,14 +1093,14 @@ document.getElementById('btnMerge').addEventListener('click', () => {
   if (!pendingRecords) { logImport('Selecione um arquivo primeiro.', 'warn'); return; }
   applyImportedRecords(pendingRecords, 'merge');
 });
-document.getElementById('btnReplace').addEventListener('click', () => {
+document.getElementById('btnReplace').addEventListener('click', async () => {
   if (!pendingRecords) { logImport('Selecione um arquivo primeiro.', 'warn'); return; }
-  if (confirm('Isso vai substituir todos os dados carregados atualmente. Continuar?')) {
+  if (await customConfirm('Isso vai substituir todos os dados carregados atualmente. Continuar?')) {
     applyImportedRecords(pendingRecords, 'replace');
   }
 });
-document.getElementById('btnClear').addEventListener('click', () => {
-  if (confirm('Isso vai apagar TODOS os dados da base (ela ficará vazia, sem os dados de exemplo). Continuar?')) {
+document.getElementById('btnClear').addEventListener('click', async () => {
+  if (await customConfirm('Isso vai apagar TODOS os dados da base (ela ficará vazia, sem os dados de exemplo). Continuar?')) {
     STATE = { records: [] };
     persistState();
     renderAll();
@@ -1054,8 +1108,8 @@ document.getElementById('btnClear').addEventListener('click', () => {
     logImport('Base de dados limpa (0 NFs).', 'ok');
   }
 });
-document.getElementById('btnReset').addEventListener('click', () => {
-  if (confirm('Restaurar o exemplo de 28/08/2026? Isso descarta os dados importados.')) {
+document.getElementById('btnReset').addEventListener('click', async () => {
+  if (await customConfirm('Restaurar o exemplo de 28/08/2026? Isso descarta os dados importados.')) {
     localStorage.removeItem(STORAGE_KEY);
     sortAndSet(EMBEDDED_DATA);
     renderAll();
@@ -1081,10 +1135,10 @@ document.getElementById('btnPasteMerge').addEventListener('click', () => {
   logImport(`Texto colado: ${parsed.records.length} NF(s) reconhecida(s).`, 'ok');
   applyImportedRecords(parsed.records, 'merge');
 });
-document.getElementById('btnPasteReplace').addEventListener('click', () => {
+document.getElementById('btnPasteReplace').addEventListener('click', async () => {
   const text = document.getElementById('pasteArea').value;
   if (!text.trim()) { logImport('Cole algum conteúdo antes de importar.', 'warn'); return; }
-  if (!confirm('Isso vai substituir todos os dados carregados atualmente. Continuar?')) return;
+  if (!(await customConfirm('Isso vai substituir todos os dados carregados atualmente. Continuar?'))) return;
   clearImportLog();
   const parsed = parsePastedText(text);
   logImport(`Texto colado: ${parsed.records.length} NF(s) reconhecida(s).`, 'ok');
@@ -1381,7 +1435,7 @@ document.getElementById('btnSalvarParametros').addEventListener('click', () => {
 
 document.getElementById('btnLancarApuracao').addEventListener('click', () => {
   const ym = document.getElementById('apMes').value;
-  if (!ym) { alert('Selecione o mês.'); return; }
+  if (!ym) { showToast('Selecione o mês.', 'warn'); return; }
   const saldoInicial = parseApuracaoNumber(document.getElementById('apSaldoInicial').value);
   const entradas = parseApuracaoNumber(document.getElementById('apEntradas').value);
   const saidas = parseApuracaoNumber(document.getElementById('apSaidas').value);
@@ -1401,7 +1455,7 @@ document.getElementById('apSaldoFinal').addEventListener('input', () => { saldoF
 document.getElementById('btnUsarProximoMes').addEventListener('click', () => {
   const ym = document.getElementById('apMes').value;
   const saldoFinalVal = document.getElementById('apSaldoFinal').value;
-  if (!ym) { alert('Selecione o mês atual e informe os saldos primeiro.'); return; }
+  if (!ym) { showToast('Selecione o mês atual e informe os saldos primeiro.', 'warn'); return; }
   document.getElementById('apMes').value = nextYm(ym);
   document.getElementById('apSaldoInicial').value = saldoFinalVal;
   document.getElementById('apEntradas').value = '';
