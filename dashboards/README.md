@@ -25,14 +25,18 @@ Código-fonte dos painéis publicados como Claude Artifacts para a Vila Porto In
 - **Apuração MOT** (`apuracao-mot.html`) — apuração de serviços (armazenagem + expedição e seguro) da MOT Comércio e Importação, com geração de demonstrativo por e-mail. Vinculado a partir de Apurações de Serviços.
   Publicado em: https://claude.ai/code/artifact/857a0afc-7e9a-4c6e-b84c-8c5ac1307502
 
+- **Apuração Microware** (`apuracao-microware.html`) — "Recebimento Diário", painel de recebimento/notas fiscais da Microware Tecnologia de Informação, com KPIs, gráficos, tabela de notas fiscais, importação de planilha (SheetJS) e apuração mensal de serviços (CRC). Vinculado a partir de Apurações de Serviços.
+  Publicado em: https://claude.ai/code/artifact/fab2fcda-ac01-4e81-8028-e39697e09dbe
+
 ## Como funciona a sincronização
 
-Todos os seis painéis de dados (Faturamento, Estoque Vila Velha, Apurações de Serviços, Apuração Cacique, Apuração Olam e Apuração MOT) usam o recurso `artifact` do Claude (auto-publicação): a própria página busca seu HTML atual, atualiza o bloco `<script id="seedData">` com os dados novos e publica uma nova versão de si mesma. Assim, as alterações são salvas automaticamente — sem precisar clicar em "salvar" — e qualquer pessoa que abrir o link depois (inclusive após fechar e voltar) vê os dados mais recentes, sem precisar de login ou banco de dados externo.
+Todos os sete painéis de dados (Faturamento, Estoque Vila Velha, Apurações de Serviços, Apuração Cacique, Apuração Olam, Apuração MOT e Apuração Microware) usam o recurso `artifact` do Claude (auto-publicação): a própria página busca seu HTML atual, atualiza o bloco `<script id="seedData">` com os dados novos e publica uma nova versão de si mesma. Assim, as alterações são salvas automaticamente — sem precisar clicar em "salvar" — e qualquer pessoa que abrir o link depois (inclusive após fechar e voltar) vê os dados mais recentes, sem precisar de login ou banco de dados externo.
 
 - Faturamento, Estoque Vila Velha e Apurações de Serviços publicam a cada ação relevante do usuário (importar dados, editar um cliente, adicionar/remover).
 - Apuração Cacique publica ao salvar um snapshot, excluir um histórico, limpar dados, e também ao fechar/trocar de aba (para não perder o que foi digitado nas tabelas).
 - Apuração Olam publica ao salvar uma apuração, excluir um registro do histórico, ou limpar os dados.
 - Apuração MOT publica pouco depois de parar de digitar nos campos (debounce), e também ao limpar os dados.
+- Apuração Microware é diferente dos demais: ela guarda seus dados apenas no `localStorage` do navegador de quem está usando (não usa o recurso `artifact` para auto-publicar). Ou seja, dados importados/digitados nela ficam salvos só naquele navegador/computador — não sincronizam entre dispositivos nem aparecem para outra pessoa que abra o link.
 
 Apuração Cacique e Apuração Olam também usam o recurso `downloads` (para exportar CSV/relatório), além do `artifact`. Por decisão de escopo, essas duas continuam sem o link público "Anyone with the link" habilitado — a capacidade `downloads` bloqueia o compartilhamento público na plataforma, independente de o `artifact` estar presente. Apuração MOT não usa `downloads` (o "Gerar demonstrativo" apenas copia texto para a área de transferência), então pode ter o link público habilitado se desejado.
 
