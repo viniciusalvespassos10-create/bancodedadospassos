@@ -434,6 +434,7 @@ textarea.paste-area{
         <div style="margin-top:14px;display:flex;gap:10px;">
           <button class="mini-btn green" id="btnMerge">Adicionar ao painel (mesclar)</button>
           <button class="mini-btn" id="btnReplace">Substituir dados atuais</button>
+          <button class="mini-btn red" id="btnClear">🗑️ Limpar dados</button>
           <button class="mini-btn red" id="btnReset">Restaurar exemplo (28/08)</button>
         </div>
         <div class="import-log" id="importLog">Aguardando importação…</div>
@@ -624,7 +625,7 @@ function loadInitialState() {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      if (parsed && parsed.records && parsed.records.length) {
+      if (parsed && Array.isArray(parsed.records)) {
         sortAndSet(parsed.records);
         return;
       }
@@ -972,11 +973,26 @@ function applyImportedRecords(newRecords, mode) {
   const semData = newRecords.filter(r => !r.d).length;
   if (semData) logImport(`Aviso: ${semData} linha(s) sem data reconhecida.`, 'warn');
 
-  const finalRecords = mode === 'replace' ? newRecords : STATE.records.concat(newRecords);
+  let finalRecords;
+  let atualizados = 0;
+  if (mode === 'replace') {
+    finalRecords = newRecords;
+  } else {
+    const base = STATE.records.slice();
+    newRecords.forEach(rec => {
+      if (rec.nf !== null && rec.nf !== undefined) {
+        const idx = base.findIndex(r => r.nf === rec.nf);
+        if (idx !== -1) { base[idx] = rec; atualizados++; return; }
+      }
+      base.push(rec);
+    });
+    finalRecords = base;
+  }
   sortAndSet(finalRecords);
   persistState();
   renderAll();
-  logImport(`Concluído: base agora com ${STATE.records.length.toLocaleString('pt-BR')} NF(s).`, 'ok');
+  const dupMsg = atualizados ? ` (${atualizados} NF(s) já existente(s) foram atualizada(s), não duplicada(s))` : '';
+  logImport(`Concluído: base agora com ${STATE.records.length.toLocaleString('pt-BR')} NF(s)${dupMsg}.`, 'ok');
 }
 
 /* ======================================================================
@@ -1027,6 +1043,15 @@ document.getElementById('btnReplace').addEventListener('click', () => {
   if (!pendingRecords) { logImport('Selecione um arquivo primeiro.', 'warn'); return; }
   if (confirm('Isso vai substituir todos os dados carregados atualmente. Continuar?')) {
     applyImportedRecords(pendingRecords, 'replace');
+  }
+});
+document.getElementById('btnClear').addEventListener('click', () => {
+  if (confirm('Isso vai apagar TODOS os dados da base (ela ficará vazia, sem os dados de exemplo). Continuar?')) {
+    STATE = { records: [] };
+    persistState();
+    renderAll();
+    clearImportLog();
+    logImport('Base de dados limpa (0 NFs).', 'ok');
   }
 });
 document.getElementById('btnReset').addEventListener('click', () => {
