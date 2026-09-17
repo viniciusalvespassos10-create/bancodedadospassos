@@ -579,6 +579,12 @@ input.result-input{background:var(--surf3-light);font-weight:600;color:var(--acc
             <div class="row-input"><input type="number" value="25.20" id="cx-rew-tarifa-ent" oninput="calc()"></div>
             <div class="row-input"><input type="number" id="cx-rew-ofi-ent" class="result-input" readonly></div>
           </div>
+          <div class="input-row" style="grid-template-columns:160px 1fr 1fr 1fr">
+            <div class="row-label bold">Saída Rework</div>
+            <div class="row-input"><input type="number" id="cx-rew-sai" placeholder="0" oninput="calc()"></div>
+            <div class="row-input"><input type="number" value="26.10" id="cx-rew-tarifa-sai" oninput="calc()"></div>
+            <div class="row-input"><input type="number" id="cx-rew-ofi-sai" class="result-input" readonly></div>
+          </div>
           <div class="input-row" style="grid-template-columns:160px 1fr">
             <div class="row-label">Rework (Estoque)</div>
             <div class="row-input"><input type="number" id="cx-rew-estoque" placeholder="0" oninput="calc()"></div>
@@ -961,8 +967,8 @@ function calc(){
   const cxEst=n('cx-estoque'), cxEnt=n('cx-entrada'), cxSai=n('cx-saida');
   const cxEstAtual=cxEst+cxEnt-cxSai;
   const cxSaldo=cxEstAtual;
-  const cxRewEnt=n('cx-rew-ent'), cxRewEst=n('cx-rew-estoque');
-  const cxSaldoRew=cxSaldo+cxRewEnt+cxRewEst;
+  const cxRewEnt=n('cx-rew-ent'), cxRewSai=n('cx-rew-sai'), cxRewEst=n('cx-rew-estoque');
+  const cxSaldoRew=cxSaldo+cxRewEnt+cxRewEst-cxRewSai;
   const cxPico=Math.max(cxSaldo, cxSaldoRew);
   setN('cx-estoque-atual',cxEstAtual);
   setN('cx-saldo',cxSaldo);
@@ -971,6 +977,7 @@ function calc(){
   setN('cx-ofi-ent', cxEnt*n('cx-tarifa-ent'));
   setN('cx-ofi-sai', cxSai*n('cx-tarifa-sai'));
   setN('cx-rew-ofi-ent', cxRewEnt*n('cx-rew-tarifa-ent'));
+  setN('cx-rew-ofi-sai', cxRewSai*n('cx-rew-tarifa-sai'));
   setN('cx-ofi-pico', cxPico*n('cx-tarifa-pico'));
 
   // BAGS
@@ -1020,7 +1027,7 @@ function calc(){
   // + Seguro OFI + Estufamento OFI + Stretchamento OFI + Remontagem OFI
   const grand =
     n('emb-ofi-ent') + n('emb-ofi-sai') + n('emb-ofi-final') +
-    n('cx-ofi-ent') + n('cx-ofi-sai') + n('cx-rew-ofi-ent') + n('cx-ofi-pico') +
+    n('cx-ofi-ent') + n('cx-ofi-sai') + n('cx-rew-ofi-ent') + n('cx-rew-ofi-sai') + n('cx-ofi-pico') +
     n('bag-ofi-ent') + n('bag-ofi-sai') + n('bag-rew-ofi-ent') + n('bag-rew-ofi-sai') +
     n('bag-ofi-vert') + n('bag-ofi-horiz') +
     n('seg-ofi') + n('est-ofi') + n('str-ofi') + n('rem-ofi') +
@@ -1047,10 +1054,10 @@ function salvar(){
           ofi_saldo:n('emb-ofi-final'), ofi_ent:n('emb-ofi-ent'), ofi_sai:n('emb-ofi-sai') },
     // Caixas
     cx:{ estoque:n('cx-estoque'), entrada:n('cx-entrada'), saida:n('cx-saida'),
-         saldo:n('cx-saldo'), rew_ent:n('cx-rew-ent'), rew_estoque:n('cx-rew-estoque'),
+         saldo:n('cx-saldo'), rew_ent:n('cx-rew-ent'), rew_sai:n('cx-rew-sai'), rew_estoque:n('cx-rew-estoque'),
          saldo_rew:n('cx-saldo-rew'), pico:n('cx-pico'), tarifa_pico:n('cx-tarifa-pico'),
          ofi_ent:n('cx-ofi-ent'), ofi_sai:n('cx-ofi-sai'), ofi_rew_ent:n('cx-rew-ofi-ent'),
-         ofi_pico:n('cx-ofi-pico') },
+         ofi_rew_sai:n('cx-rew-ofi-sai'), ofi_pico:n('cx-ofi-pico') },
     // Bags
     bag:{ estoque:n('bag-estoque'), entrada:n('bag-entrada'), saida:n('bag-saida'),
           saldo:n('bag-saldo'), rew_ent:n('bag-rew-ent'), rew_sai:n('bag-rew-sai'),
@@ -1070,7 +1077,7 @@ function salvar(){
   };
   record.total =
     record.emb.ofi_ent + record.emb.ofi_sai + record.emb.ofi_saldo +
-    record.cx.ofi_ent + record.cx.ofi_sai + record.cx.ofi_rew_ent + record.cx.ofi_pico +
+    record.cx.ofi_ent + record.cx.ofi_sai + record.cx.ofi_rew_ent + record.cx.ofi_rew_sai + record.cx.ofi_pico +
     record.bag.ofi_ent + record.bag.ofi_sai + record.bag.ofi_rew_ent + record.bag.ofi_rew_sai +
     record.bag.ofi_vert + record.bag.ofi_horiz +
     record.seg.ofi + record.est.ofi + record.str.ofi + record.rem.ofi +
@@ -1128,7 +1135,7 @@ function renderDash(){
   // OFI base = campos salvos sem extras
   const ofiBase =
     (r.emb.ofi_ent||0) + (r.emb.ofi_sai||0) + (r.emb.ofi_saldo||0) +
-    (r.cx.ofi_ent||0) + (r.cx.ofi_sai||0) + (r.cx.ofi_rew_ent||0) + (r.cx.ofi_pico||0) +
+    (r.cx.ofi_ent||0) + (r.cx.ofi_sai||0) + (r.cx.ofi_rew_ent||0) + (r.cx.ofi_rew_sai||0) + (r.cx.ofi_pico||0) +
     (r.bag.ofi_ent||0) + (r.bag.ofi_sai||0) + (r.bag.ofi_rew_ent||0) + (r.bag.ofi_rew_sai||0) +
     (r.bag.ofi_vert||0) + (r.bag.ofi_horiz||0) +
     (r.seg.ofi||0) + (r.est.ofi||0) + (r.str.ofi||0) + (r.rem.ofi||0);
@@ -1332,7 +1339,7 @@ function recalcSavedTotals(){
   all.forEach(r => {
     const correct =
       (r.emb.ofi_ent||0) + (r.emb.ofi_sai||0) + (r.emb.ofi_saldo||0) +
-      (r.cx.ofi_ent||0) + (r.cx.ofi_sai||0) + (r.cx.ofi_rew_ent||0) + (r.cx.ofi_pico||0) +
+      (r.cx.ofi_ent||0) + (r.cx.ofi_sai||0) + (r.cx.ofi_rew_ent||0) + (r.cx.ofi_rew_sai||0) + (r.cx.ofi_pico||0) +
       (r.bag.ofi_ent||0) + (r.bag.ofi_sai||0) + (r.bag.ofi_rew_ent||0) + (r.bag.ofi_rew_sai||0) +
       (r.bag.ofi_vert||0) + (r.bag.ofi_horiz||0) +
       (r.seg.ofi||0) + (r.est.ofi||0) + (r.str.ofi||0) + (r.rem.ofi||0);
