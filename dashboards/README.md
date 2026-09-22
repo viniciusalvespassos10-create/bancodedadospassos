@@ -28,7 +28,7 @@ Código-fonte dos painéis publicados como Claude Artifacts para a Vila Porto In
 - **Apuração Microware** (`apuracao-microware.html`) — "Recebimento Diário", painel de recebimento/notas fiscais da Microware Tecnologia de Informação, com KPIs, gráficos, tabela de notas fiscais, importação de planilha (SheetJS) e apuração mensal de serviços (CRC). Vinculado a partir de Apurações de Serviços.
   Publicado em: https://claude.ai/code/artifact/fab2fcda-ac01-4e81-8028-e39697e09dbe
 
-- **Recebimentos Mercado Urso** (`recebimentos-mercado-urso.html`) — log simples de recebimentos (data, nota fiscal, fornecedor, volumes, observações) do Mercado Urso, com KPIs básicos. Não calcula apuração/cobrança — é só um registro do que foi recebido. Vinculado a partir de Apurações de Serviços.
+- **Recebimentos Mercado Urso** (`recebimentos-mercado-urso.html`) — log simples de recebimentos (data, nota fiscal, fornecedor, volumes, observações) do Mercado Urso, com KPIs básicos. Não calcula apuração/cobrança — é só um registro do que foi recebido. Painel independente, não vinculado em Apurações de Serviços.
   Publicado em: https://claude.ai/artifact/G1QPBbftMh87wh5LFy2ShQ
 
 ## Como funciona a sincronização
