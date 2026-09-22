@@ -461,6 +461,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // ---------- Storage keys ----------
   var LS_AGENDAMENTOS = 'agendamentos_recebimento_v1';
   var LS_DEPARA = 'depara_ean_v1';
+  var LS_DRAFT = 'agendamento_rascunho_v1';
+  var DRAFT_FIELDS = ['fData','fHora','fCliente','fFornecedor','fTransportadora','fPlaca','fMotorista','fObs'];
 
   // ---------- State ----------
   var uploadedNotas = [];   // notas parsed for the form currently being filled
@@ -486,6 +488,48 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function saveDepara(){
     try{ localStorage.setItem(LS_DEPARA, JSON.stringify(depara)); }catch(e){}
   }
+
+  // ---------- Rascunho do "Novo Agendamento" (sobrevive a fechar/atualizar o painel) ----------
+  function saveDraft(){
+    try{
+      var campos = {};
+      DRAFT_FIELDS.forEach(function(id){
+        var el = document.getElementById(id);
+        if(el) campos[id] = el.value;
+      });
+      if(!uploadedNotas.length && DRAFT_FIELDS.every(function(id){ return !campos[id]; })){
+        localStorage.removeItem(LS_DRAFT);
+        return;
+      }
+      localStorage.setItem(LS_DRAFT, JSON.stringify({ notas: uploadedNotas, campos: campos }));
+    }catch(e){ /* rascunho é best-effort; não interrompe o uso do painel */ }
+  }
+  function clearDraft(){
+    try{ localStorage.removeItem(LS_DRAFT); }catch(e){}
+  }
+  function loadDraft(){
+    var draft = loadJSON(LS_DRAFT, null);
+    if(!draft) return;
+    if(Array.isArray(draft.notas) && draft.notas.length){
+      uploadedNotas = draft.notas;
+      renderNotas();
+      renderItens();
+    }
+    if(draft.campos){
+      DRAFT_FIELDS.forEach(function(id){
+        if(draft.campos[id]){
+          var el = document.getElementById(id);
+          if(el) el.value = draft.campos[id];
+        }
+      });
+    }
+    prefillFormFromNotas();
+    toast('Rascunho anterior restaurado — continue de onde parou.', 'success');
+  }
+  window.addEventListener('beforeunload', saveDraft);
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'hidden') saveDraft();
+  });
 
   function uid(){
     return 'ag_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
@@ -822,6 +866,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         renderNotas();
       });
     });
+    saveDraft();
   }
 
   // Generates a new NF-e XML where each item's cProd (código do fornecedor)
@@ -893,6 +938,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var itens = allUploadedItens();
         itens[idx].codigoCliente = inp.value;
         inp.classList.toggle('matched', !!inp.value);
+        saveDraft();
       });
     });
   }
@@ -903,6 +949,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       document.getElementById(id).value = '';
     });
     uploadedNotas = [];
+    clearDraft();
     renderNotas(); renderItens(); prefillFormFromNotas();
   }
 
@@ -1361,6 +1408,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function init(){
     var today = new Date();
     document.getElementById('fData').value = today.toISOString().slice(0,10);
+    DRAFT_FIELDS.forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.addEventListener('input', saveDraft);
+    });
+    loadDraft();
     updateTabCounts();
     refreshDatalists();
     renderLista();
