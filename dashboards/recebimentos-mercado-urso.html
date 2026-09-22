@@ -1,0 +1,675 @@
+<title>Recebimentos Mercado Urso</title>
+<style>
+:root{
+  --bg:#080b15;
+  --card:#131a2d;
+  --card2:#0f1524;
+  --border:#232e44;
+  --text:#eef1f7;
+  --muted:#8b96ab;
+  --blue:#3b82f6;
+  --blue-soft:rgba(59,130,246,.15);
+  --green:#22c55e;
+  --green-soft:rgba(34,197,94,.15);
+  --teal:#06b6d4;
+  --teal-soft:rgba(6,182,212,.15);
+  --orange:#f59e0b;
+  --orange-soft:rgba(245,158,11,.15);
+  --red:#ef4444;
+  --red-soft:rgba(239,68,68,.15);
+}
+html[data-theme="light"]{
+  --bg:#f2f4f9;
+  --card:#ffffff;
+  --card2:#f5f7fb;
+  --border:#dde3ee;
+  --text:#1a2233;
+  --muted:#6b7688;
+  --blue-soft:rgba(59,130,246,.10);
+  --green-soft:rgba(34,197,94,.12);
+  --teal-soft:rgba(6,182,212,.12);
+  --orange-soft:rgba(245,158,11,.14);
+  --red-soft:rgba(239,68,68,.12);
+}
+*{box-sizing:border-box;}
+body{transition:background-color .2s ease, color .2s ease;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Segoe UI', Arial, sans-serif;
+  padding:20px;
+  display:flex;
+  justify-content:center;
+}
+.page{width:100%;max-width:1200px;}
+
+.mini-btn{
+  background:var(--card);border:1px solid var(--border);color:var(--text);
+  padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;
+  text-decoration:none;display:inline-flex;align-items:center;
+}
+.mini-btn.green{background:var(--green);border-color:var(--green);color:#06210f;}
+.mini-btn.red{background:transparent;border-color:var(--red);color:var(--red);}
+.mini-btn:hover{filter:brightness(1.1);}
+
+.top-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:12px;}
+.title-block{display:flex;flex-direction:column;gap:4px;}
+.title-line{display:flex;align-items:center;gap:10px;}
+.title-line .accent-bar{width:6px;height:26px;background:var(--blue);border-radius:2px;}
+.title-line h1{font-size:24px;margin:0;letter-spacing:.3px;}
+.subtitle-line{display:flex;align-items:center;gap:8px;color:var(--blue);font-size:14px;font-weight:600;margin-left:2px;}
+.updated{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:13px;margin-top:4px;}
+.nav-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+
+.panel{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:14px;}
+.panel-title{
+  font-size:12.5px;font-weight:700;letter-spacing:.4px;color:#d3daea;margin:0 0 12px 0;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.panel-title span.hint{font-size:11px;color:var(--muted);font-weight:600;}
+
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;}
+.kpi-label{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.3px;text-transform:uppercase;}
+.kpi-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.kpi-value{font-size:26px;font-weight:800;letter-spacing:.2px;}
+.kpi-sub{font-size:12px;color:var(--muted);}
+
+.form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+.form-field{display:flex;flex-direction:column;gap:5px;}
+.form-field label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
+.form-field input{
+  background:var(--card2);border:1px solid var(--border);color:var(--text);
+  padding:9px 11px;border-radius:8px;font-size:13px;outline:none;
+}
+.form-field input:focus{border-color:var(--blue);}
+
+table.data-table{width:100%;border-collapse:collapse;font-size:13px;}
+table.data-table thead th{
+  text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.3px;
+  padding:10px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);
+}
+table.data-table tbody td{padding:9px 10px;border-bottom:1px solid var(--border);}
+table.data-table tbody tr:hover{background:var(--card2);}
+table.data-table tfoot td{padding:10px;font-weight:700;border-top:2px solid var(--border);}
+.table-scroll{max-height:460px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;}
+.num-cell{text-align:right;font-variant-numeric:tabular-nums;}
+.del-btn{background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;padding:2px 6px;}
+.del-btn:hover{opacity:.7;}
+
+.filters-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+.filters-row input[type=text], .filters-row input[type=date]{
+  background:var(--card2);border:1px solid var(--border);color:var(--text);
+  padding:9px 12px;border-radius:8px;font-size:13px;
+}
+.filters-row input[type=text]{min-width:200px;flex:1;}
+.count-pill{font-size:12px;color:var(--muted);padding:6px 12px;background:var(--card2);border-radius:20px;border:1px solid var(--border);}
+
+textarea.paste-area{
+  width:100%;min-height:120px;background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:8px;padding:12px;font-family:'IBM Plex Mono',monospace;font-size:12px;resize:vertical;
+}
+.import-log{
+  margin-top:12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px;
+  font-size:12.5px;max-height:120px;overflow-y:auto;font-family:'IBM Plex Mono',monospace;
+}
+.import-log .ok{color:var(--green);}
+.import-log .warn{color:var(--orange);}
+.import-log .err{color:var(--red);}
+.legend-note{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.5;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;max-width:400px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4);}
+.modal-msg{font-size:14px;line-height:1.5;color:var(--text);margin-bottom:18px;}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;}
+.toast-stack{position:fixed;top:16px;right:16px;z-index:10000;display:flex;flex-direction:column;gap:8px;max-width:320px;}
+.toast{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--text);box-shadow:0 6px 20px rgba(0,0,0,.3);}
+.toast.warn{border-left-color:var(--orange);}
+.toast.err{border-left-color:var(--red);}
+
+@media(max-width:900px){
+  .kpi-row{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+<div class="page">
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <div class="modal-msg" id="modalMsg"></div>
+      <div class="modal-actions">
+        <button class="mini-btn" id="modalCancelBtn">Cancelar</button>
+        <button class="mini-btn green" id="modalOkBtn">Confirmar</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast-stack" id="toastStack"></div>
+
+  <div class="top-header">
+    <div class="title-block">
+      <div class="title-line">
+        <div class="accent-bar"></div>
+        <h1>Recebimentos Mercado Urso</h1>
+      </div>
+      <div class="subtitle-line">📦 Grupo Vila Porto</div>
+      <div class="updated" id="updatedLine">🕒 Base carregada</div>
+    </div>
+    <div class="nav-row">
+      <a class="mini-btn" href="https://claude.ai/code/artifact/8276edd7-6693-42a3-ae15-cebce9e7eb29">↩ Apurações</a>
+      <a class="mini-btn" href="https://claude.ai/code/artifact/a2f16c2a-b621-4e3d-8b7c-670900dd50ba">🏠 Menu Principal</a>
+      <button class="mini-btn" id="btnToggleTheme" title="Alternar tema claro/escuro">🌙 Escuro</button>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-label">Recebimentos</span>
+        <div class="kpi-icon" style="background:var(--blue-soft);color:var(--blue);">🧾</div>
+      </div>
+      <div class="kpi-value" id="kpiCount">—</div>
+      <div class="kpi-sub" id="kpiCountSub">no período</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-label">Volume Total</span>
+        <div class="kpi-icon" style="background:var(--teal-soft);color:var(--teal);">📦</div>
+      </div>
+      <div class="kpi-value" id="kpiVolume">—</div>
+      <div class="kpi-sub">un. / volumes</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-label">Valor Total</span>
+        <div class="kpi-icon" style="background:var(--green-soft);color:var(--green);">💰</div>
+      </div>
+      <div class="kpi-value" id="kpiValor">—</div>
+      <div class="kpi-sub">recebido no período</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-label">Ticket Médio</span>
+        <div class="kpi-icon" style="background:var(--orange-soft);color:var(--orange);">📊</div>
+      </div>
+      <div class="kpi-value" id="kpiTicket">—</div>
+      <div class="kpi-sub">valor médio por recebimento</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="panel-title">Registrar recebimento</p>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Data</label>
+        <input type="date" id="fData">
+      </div>
+      <div class="form-field">
+        <label>Nota / Documento</label>
+        <input type="text" id="fNota" placeholder="Ex: 12345">
+      </div>
+      <div class="form-field">
+        <label>Volume</label>
+        <input type="number" id="fVolume" placeholder="0" min="0">
+      </div>
+      <div class="form-field">
+        <label>Valor (R$)</label>
+        <input type="text" id="fValor" placeholder="0,00">
+      </div>
+      <button class="mini-btn green" id="btnAddRow">+ Adicionar</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="panel-title">Colar direto do Excel <span class="hint">Data · Nota · Volume · Valor (com cabeçalho)</span></p>
+    <p class="legend-note" style="margin-top:0;">Copie as células da planilha, incluindo a linha de cabeçalho, e cole abaixo. Aceita colunas separadas por Tab (padrão ao colar do Excel).</p>
+    <textarea class="paste-area" id="pasteArea" placeholder="Cole aqui o conteúdo copiado do Excel..."></textarea>
+    <div style="margin-top:10px;display:flex;gap:10px;">
+      <button class="mini-btn green" id="btnPasteMerge">Adicionar ao painel</button>
+      <button class="mini-btn" id="btnPasteReplace">Substituir dados atuais</button>
+    </div>
+    <div class="import-log" id="importLog">Aguardando importação…</div>
+  </div>
+
+  <div class="panel">
+    <p class="panel-title">Recebimentos registrados</p>
+    <div class="filters-row">
+      <input type="text" id="tableSearch" placeholder="Buscar por nota ou data (25/08)...">
+      <input type="date" id="filterDataIni" title="De">
+      <input type="date" id="filterDataFim" title="Até">
+      <span class="count-pill" id="rowCount">0 recebimentos</span>
+      <button class="mini-btn" id="clearFilters">Limpar filtros</button>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Data</th><th>Nota / Documento</th><th class="num-cell">Volume</th><th class="num-cell">Valor</th><th></th></tr></thead>
+        <tbody id="itemsTableBody"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">Total</td>
+            <td class="num-cell" id="footVolume">0</td>
+            <td class="num-cell" id="footValor">R$ 0,00</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px;">
+      <button class="mini-btn" id="btnExportCsv">⬇ Exportar CSV</button>
+      <button class="mini-btn red" id="btnClear">🗑️ Limpar dados</button>
+    </div>
+  </div>
+
+</div>
+<script>
+const STORAGE_KEY = 'mercadourso_recebimentos_v1';
+const THEME_KEY = 'mercadourso_theme_v1';
+let STATE = { records: [] };
+let downloadsNS = null;
+async function initCapabilities() {
+  try {
+    if (window.claude && typeof window.claude.use === 'function') {
+      downloadsNS = await window.claude.use('downloads');
+    }
+  } catch (e) { downloadsNS = null; }
+}
+
+/* ======================================================================
+   MODAL DE CONFIRMAÇÃO E TOAST — o artefato roda num iframe isolado que
+   bloqueia confirm()/alert() nativos do navegador (não mostram nada e
+   retornam false), então usamos um modal próprio na página.
+   ====================================================================== */
+function customConfirm(message) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('modalOverlay');
+    document.getElementById('modalMsg').textContent = message;
+    overlay.classList.add('show');
+    const okBtn = document.getElementById('modalOkBtn');
+    const cancelBtn = document.getElementById('modalCancelBtn');
+    function cleanup(result) {
+      overlay.classList.remove('show');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      resolve(result);
+    }
+    function onOk() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+  });
+}
+function showToast(message, type) {
+  const stack = document.getElementById('toastStack');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = message;
+  stack.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+/* ======================================================================
+   TEMA
+   ====================================================================== */
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('btnToggleTheme').textContent = theme === 'light' ? '☀️ Claro' : '🌙 Escuro';
+}
+function loadTheme() {
+  let theme = 'dark';
+  try { theme = localStorage.getItem(THEME_KEY) || 'dark'; } catch (e) { /* ignore */ }
+  applyTheme(theme);
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  const next = current === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+  try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* ignore */ }
+}
+
+/* ======================================================================
+   PARSERS — formato numérico/data brasileiro
+   ====================================================================== */
+function parseBRNumber(raw) {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw === 'number') return raw;
+  let s = String(raw).trim();
+  if (!s) return null;
+  s = s.replace(/R\$\s*/gi, '').trim();
+  const hasComma = s.includes(',');
+  const hasDot = s.includes('.');
+  if (hasComma && hasDot) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  } else if (hasComma) {
+    s = s.replace(',', '.');
+  }
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+const DATE_RE = /(\d{1,2})\s*[\/\-]\s*(\d{1,2})\s*[\/\-]\s*(\d{2,4})/;
+function parseDateToken(str) {
+  if (str === null || str === undefined) return null;
+  if (typeof str === 'number') {
+    const utcDays = Math.floor(str - 25569);
+    const utcMs = utcDays * 86400 * 1000;
+    const d = new Date(utcMs);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().slice(0, 10);
+  }
+  const s = String(str).trim();
+  const m = DATE_RE.exec(s);
+  if (!m) return null;
+  let [, d, mo, y] = m;
+  y = parseInt(y, 10);
+  if (y < 100) y += 2000;
+  d = parseInt(d, 10); mo = parseInt(mo, 10);
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  return `${y.toString().padStart(4,'0')}-${mo.toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+}
+
+function normalizeHeader(s) {
+  return (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim();
+}
+
+function detectColumns(headerRow) {
+  const cols = { data: -1, nota: -1, volume: -1, valor: -1 };
+  headerRow.forEach((cell, idx) => {
+    const h = normalizeHeader(cell);
+    if (cols.data === -1 && /DATA/.test(h)) cols.data = idx;
+    else if (cols.nota === -1 && /NOTA|DOCUMENTO|^NF$/.test(h)) cols.nota = idx;
+    else if (cols.volume === -1 && /VOLUME/.test(h)) cols.volume = idx;
+    else if (cols.valor === -1 && /VALOR/.test(h)) cols.valor = idx;
+  });
+  return cols;
+}
+
+function looksLikeHeaderRow(row) {
+  const cols = detectColumns(row);
+  return cols.data !== -1 && (cols.nota !== -1 || cols.volume !== -1 || cols.valor !== -1);
+}
+
+function parseRowsToRecords(rows) {
+  let headerIdx = rows.findIndex(r => r && looksLikeHeaderRow(r));
+  let cols;
+  if (headerIdx === -1) {
+    headerIdx = -1;
+    cols = { data: 0, nota: 1, volume: 2, valor: 3 };
+  } else {
+    cols = detectColumns(rows[headerIdx]);
+  }
+
+  const records = [];
+  let skipped = 0;
+  for (let i = headerIdx + 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.every(c => c === null || c === undefined || String(c).trim() === '')) continue;
+    const dataRaw = cols.data >= 0 ? row[cols.data] : null;
+    const notaRaw = cols.nota >= 0 ? row[cols.nota] : null;
+    const d = parseDateToken(dataRaw);
+    const nota = notaRaw !== null && notaRaw !== undefined && String(notaRaw).trim() !== '' ? String(notaRaw).trim() : null;
+    if (!d && !nota) { skipped++; continue; }
+    records.push({
+      id: 'r_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      d,
+      nota,
+      volume: cols.volume >= 0 ? parseBRNumber(row[cols.volume]) : null,
+      valor: cols.valor >= 0 ? parseBRNumber(row[cols.valor]) : null
+    });
+  }
+  return { records, skipped, headerFound: headerIdx !== -1 };
+}
+
+function parsePastedText(text) {
+  const lines = text.split(/\r\n|\n|\r/).filter(l => l.length > 0);
+  const rows = lines.map(l => l.split('\t'));
+  return parseRowsToRecords(rows);
+}
+
+/* ======================================================================
+   ESTADO
+   ====================================================================== */
+function sortAndSet(records) {
+  const clean = records.filter(r => r.d || r.nota);
+  clean.sort((a, b) => (a.d || '').localeCompare(b.d || ''));
+  STATE = { records: clean };
+}
+
+function loadInitialState() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed && Array.isArray(parsed.records)) {
+        sortAndSet(parsed.records);
+        return;
+      }
+    } catch (e) { /* ignore */ }
+  }
+  sortAndSet([]);
+}
+
+function persistState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ records: STATE.records })); }
+  catch (e) { console.warn('Não foi possível salvar no localStorage', e); }
+}
+
+function fmtDia(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function fmtMoeda(v) {
+  return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+function fmtNum(v) {
+  return (v || 0).toLocaleString('pt-BR');
+}
+
+/* ======================================================================
+   RENDER
+   ====================================================================== */
+function applyFilters(records) {
+  const search = (document.getElementById('tableSearch').value || '').trim().toLowerCase();
+  const ini = document.getElementById('filterDataIni').value;
+  const fim = document.getElementById('filterDataFim').value;
+  return records.filter(r => {
+    if (search) {
+      const hay = ((r.nota || '') + ' ' + fmtDia(r.d)).toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    if (ini && r.d && r.d < ini) return false;
+    if (fim && r.d && r.d > fim) return false;
+    return true;
+  });
+}
+
+function renderKpis(records) {
+  const count = records.length;
+  const volume = records.reduce((s, r) => s + (r.volume || 0), 0);
+  const valor = records.reduce((s, r) => s + (r.valor || 0), 0);
+  const ticket = count > 0 ? valor / count : 0;
+  document.getElementById('kpiCount').textContent = fmtNum(count);
+  document.getElementById('kpiVolume').textContent = fmtNum(volume);
+  document.getElementById('kpiValor').textContent = fmtMoeda(valor);
+  document.getElementById('kpiTicket').textContent = fmtMoeda(ticket);
+  if (records.length) {
+    const datas = records.map(r => r.d).filter(Boolean).sort();
+    document.getElementById('kpiCountSub').textContent = datas.length
+      ? `${fmtDia(datas[0])} – ${fmtDia(datas[datas.length - 1])}`
+      : 'no período';
+  } else {
+    document.getElementById('kpiCountSub').textContent = 'no período';
+  }
+}
+
+function renderTable(records) {
+  const tbody = document.getElementById('itemsTableBody');
+  if (!records.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">Nenhum recebimento registrado ainda.</td></tr>';
+  } else {
+    tbody.innerHTML = records.map(r => `
+      <tr>
+        <td>${fmtDia(r.d)}</td>
+        <td>${r.nota || '—'}</td>
+        <td class="num-cell">${r.volume !== null && r.volume !== undefined ? fmtNum(r.volume) : '—'}</td>
+        <td class="num-cell">${r.valor !== null && r.valor !== undefined ? fmtMoeda(r.valor) : '—'}</td>
+        <td style="text-align:center;"><button class="del-btn" data-id="${r.id}" title="Excluir">✕</button></td>
+      </tr>
+    `).join('');
+  }
+  document.getElementById('rowCount').textContent = `${records.length} recebimento(s)`;
+  const footVolume = records.reduce((s, r) => s + (r.volume || 0), 0);
+  const footValor = records.reduce((s, r) => s + (r.valor || 0), 0);
+  document.getElementById('footVolume').textContent = fmtNum(footVolume);
+  document.getElementById('footValor').textContent = fmtMoeda(footValor);
+
+  tbody.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', () => removeRecord(btn.dataset.id));
+  });
+}
+
+function renderAll() {
+  const filtered = applyFilters(STATE.records);
+  renderKpis(filtered);
+  renderTable(filtered);
+  document.getElementById('updatedLine').textContent = `🕒 Base com ${STATE.records.length} recebimento(s) · atualizado ${new Date().toLocaleString('pt-BR')} · 💾 salvo automaticamente neste navegador`;
+}
+
+function removeRecord(id) {
+  STATE.records = STATE.records.filter(r => r.id !== id);
+  persistState();
+  renderAll();
+}
+
+/* ======================================================================
+   ADICIONAR / IMPORTAR
+   ====================================================================== */
+function logImport(msg, type) {
+  const el = document.getElementById('importLog');
+  const cls = type === 'ok' ? 'ok' : type === 'warn' ? 'warn' : type === 'err' ? 'err' : '';
+  const line = document.createElement('div');
+  line.className = cls;
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+function clearImportLog() { document.getElementById('importLog').innerHTML = ''; }
+
+function ensureIds(records) {
+  return records.map(r => r.id ? r : Object.assign({}, r, { id: 'r_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) }));
+}
+
+function applyImportedRecords(newRecords, mode) {
+  newRecords = ensureIds(newRecords);
+  if (!newRecords.length) {
+    logImport('Nenhum registro reconhecido. Verifique se as colunas Data / Nota / Volume / Valor estão presentes.', 'err');
+    return;
+  }
+  const semData = newRecords.filter(r => !r.d).length;
+  if (semData) logImport(`Aviso: ${semData} linha(s) sem data reconhecida.`, 'warn');
+
+  let finalRecords;
+  let atualizados = 0;
+  if (mode === 'replace') {
+    finalRecords = newRecords;
+  } else {
+    const base = STATE.records.slice();
+    newRecords.forEach(rec => {
+      if (rec.nota) {
+        const idx = base.findIndex(r => r.nota === rec.nota);
+        if (idx !== -1) { base[idx] = rec; atualizados++; return; }
+      }
+      base.push(rec);
+    });
+    finalRecords = base;
+  }
+  sortAndSet(finalRecords);
+  persistState();
+  renderAll();
+  const dupMsg = atualizados ? ` (${atualizados} nota(s) já existente(s) foram atualizada(s), não duplicada(s))` : '';
+  logImport(`Concluído: base agora com ${STATE.records.length.toLocaleString('pt-BR')} recebimento(s)${dupMsg}.`, 'ok');
+}
+
+document.getElementById('btnAddRow').addEventListener('click', () => {
+  const d = document.getElementById('fData').value;
+  const nota = document.getElementById('fNota').value.trim();
+  const volume = parseBRNumber(document.getElementById('fVolume').value);
+  const valor = parseBRNumber(document.getElementById('fValor').value);
+  if (!d && !nota) { showToast('Informe pelo menos a data ou a nota.', 'warn'); return; }
+  STATE.records.push({ id: 'r_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8), d: d || null, nota: nota || null, volume, valor });
+  sortAndSet(STATE.records);
+  persistState();
+  renderAll();
+  document.getElementById('fData').value = '';
+  document.getElementById('fNota').value = '';
+  document.getElementById('fVolume').value = '';
+  document.getElementById('fValor').value = '';
+  showToast('Recebimento adicionado.');
+});
+
+document.getElementById('btnPasteMerge').addEventListener('click', () => {
+  const text = document.getElementById('pasteArea').value;
+  if (!text.trim()) { logImport('Cole algum conteúdo antes de importar.', 'warn'); return; }
+  clearImportLog();
+  const parsed = parsePastedText(text);
+  logImport(`Texto colado: ${parsed.records.length} recebimento(s) reconhecido(s).`, 'ok');
+  applyImportedRecords(parsed.records, 'merge');
+});
+document.getElementById('btnPasteReplace').addEventListener('click', async () => {
+  const text = document.getElementById('pasteArea').value;
+  if (!text.trim()) { logImport('Cole algum conteúdo antes de importar.', 'warn'); return; }
+  if (!(await customConfirm('Isso vai substituir todos os dados carregados atualmente. Continuar?'))) return;
+  clearImportLog();
+  const parsed = parsePastedText(text);
+  logImport(`Texto colado: ${parsed.records.length} recebimento(s) reconhecido(s).`, 'ok');
+  applyImportedRecords(parsed.records, 'replace');
+});
+
+document.getElementById('btnClear').addEventListener('click', async () => {
+  if (await customConfirm('Isso vai apagar TODOS os recebimentos registrados (a base ficará vazia). Continuar?')) {
+    STATE = { records: [] };
+    persistState();
+    renderAll();
+    clearImportLog();
+    logImport('Base de dados limpa (0 recebimentos).', 'ok');
+  }
+});
+
+document.getElementById('btnExportCsv').addEventListener('click', async () => {
+  const rows = [['Data', 'Nota/Documento', 'Volume', 'Valor']];
+  STATE.records.forEach(r => {
+    rows.push([fmtDia(r.d), r.nota || '', r.volume ?? '', r.valor ?? '']);
+  });
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  if (downloadsNS) {
+    try {
+      await downloadsNS.save({ filename: 'recebimentos_mercado_urso.csv', data: blob });
+      showToast('CSV exportado.');
+    } catch (e) {
+      if (e && e.code === 'declined') { showToast('Exportação cancelada.', 'warn'); }
+      else { showToast('Não foi possível exportar o CSV aqui.', 'err'); }
+    }
+    return;
+  }
+  showToast('Exportação de arquivo não disponível nesta visualização.', 'err');
+});
+
+document.getElementById('clearFilters').addEventListener('click', () => {
+  document.getElementById('tableSearch').value = '';
+  document.getElementById('filterDataIni').value = '';
+  document.getElementById('filterDataFim').value = '';
+  renderAll();
+});
+document.getElementById('tableSearch').addEventListener('input', renderAll);
+document.getElementById('filterDataIni').addEventListener('change', renderAll);
+document.getElementById('filterDataFim').addEventListener('change', renderAll);
+
+document.getElementById('btnToggleTheme').addEventListener('click', toggleTheme);
+
+loadTheme();
+loadInitialState();
+renderAll();
+initCapabilities();
+</script>
