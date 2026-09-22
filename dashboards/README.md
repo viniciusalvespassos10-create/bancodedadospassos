@@ -28,7 +28,7 @@ Código-fonte dos painéis publicados como Claude Artifacts para a Vila Porto In
 - **Apuração Microware** (`apuracao-microware.html`) — "Recebimento Diário", painel de recebimento/notas fiscais da Microware Tecnologia de Informação, com KPIs, gráficos, tabela de notas fiscais, importação de planilha (SheetJS) e apuração mensal de serviços (CRC). Vinculado a partir de Apurações de Serviços.
   Publicado em: https://claude.ai/code/artifact/fab2fcda-ac01-4e81-8028-e39697e09dbe
 
-- **Recebimentos Mercado Urso** (`recebimentos-mercado-urso.html`) — log simples de recebimentos (data, nota fiscal, fornecedor, volumes, observações) do Mercado Urso, com KPIs básicos. Não calcula apuração/cobrança — é só um registro do que foi recebido. Módulo próprio, vinculado a partir do Painel Principal (Central Vila Porto); não faz parte de Apurações de Serviços.
+- **Agendamento de Recebimento** (`recebimentos-mercado-urso.html`) — painel de agendamento de recebimentos do Mercado Urso: upload e leitura de XML de NF-e (extrai emitente, itens, NCM, EAN e valores), validação de EAN/GTIN (dígito verificador), dicionário "De/Para" código×EAN, cadastro de agendamentos com cliente/fornecedor/transportadora/placa/motorista, anexo de DANFE em PDF, geração de XML com código do produto substituído pelo EAN, histórico e status (pendente/confirmado/recebido/cancelado), exportação para CSV/XLSX e backup/importação em JSON. Módulo próprio, vinculado a partir do Painel Principal (Central Vila Porto); não faz parte de Apurações de Serviços.
   Publicado em: https://claude.ai/artifact/G1QPBbftMh87wh5LFy2ShQ
 
 ## Como funciona a sincronização
@@ -40,9 +40,9 @@ Todos os sete painéis de dados (Faturamento, Estoque Vila Velha, Apurações de
 - Apuração Olam publica ao salvar uma apuração, excluir um registro do histórico, ou limpar os dados.
 - Apuração MOT publica pouco depois de parar de digitar nos campos (debounce), e também ao limpar os dados.
 - Apuração Microware é diferente dos demais: ela guarda seus dados apenas no `localStorage` do navegador de quem está usando (não usa o recurso `artifact` para auto-publicar). Ou seja, dados importados/digitados nela ficam salvos só naquele navegador/computador — não sincronizam entre dispositivos nem aparecem para outra pessoa que abra o link.
-- Recebimentos Mercado Urso também guarda os dados apenas no `localStorage` do navegador (sem `artifact`), pelo mesmo motivo do Microware. Usa o recurso `downloads` para exportar o log.
+- Agendamento de Recebimento (Mercado Urso) também guarda os dados apenas no `localStorage` do navegador (sem `artifact`), pelo mesmo motivo do Microware — agendamentos, DANFEs anexados e o dicionário De/Para ficam só naquele navegador/computador. Usa o recurso `downloads` para exportar XML, CSV/XLSX, backup JSON e baixar o DANFE anexado.
 
-Apuração Cacique e Apuração Olam também usam o recurso `downloads` (para exportar CSV/relatório), além do `artifact`. Por decisão de escopo, essas duas continuam sem o link público "Anyone with the link" habilitado — a capacidade `downloads` bloqueia o compartilhamento público na plataforma, independente de o `artifact` estar presente. Apuração MOT não usa `downloads` (o "Gerar demonstrativo" apenas copia texto para a área de transferência), então pode ter o link público habilitado se desejado.
+Apuração Cacique, Apuração Olam e Agendamento de Recebimento (Mercado Urso) também usam o recurso `downloads` (para exportar CSV/relatório/XML/XLSX), além do `artifact` (nos dois primeiros). Por decisão de escopo/limitação da plataforma, essas continuam sem o link público "Anyone with the link" habilitado — a capacidade `downloads` bloqueia o compartilhamento público, independente de o `artifact` estar presente. Apuração MOT não usa `downloads` (o "Gerar demonstrativo" apenas copia texto para a área de transferência), então pode ter o link público habilitado se desejado.
 
 ## Publicar uma alteração
 
