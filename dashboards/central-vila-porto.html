@@ -547,6 +547,12 @@
         }
 
 
+        .teal {
+            color: #2dd4bf;
+            background: rgba(45, 212, 191, 0.14);
+        }
+
+
         /* =========================================================
            STATUS DO CARD
         ========================================================= */
@@ -679,6 +685,11 @@
 
         .card.red-card::after {
             background: #ff5252;
+        }
+
+
+        .card.teal-card::after {
+            background: #2dd4bf;
         }
 
 
@@ -912,7 +923,7 @@
                     <div>
 
                         <div class="status-number">
-                            6 módulos
+                            7 módulos
                         </div>
 
                         <span class="status-label">
@@ -933,7 +944,7 @@
                     <div>
 
                         <div class="status-number">
-                            3 ativos
+                            4 ativos
                         </div>
 
                         <span class="status-label">
@@ -978,7 +989,7 @@
                 </span>
 
                 <span class="last-update-value">
-                    04/09/2026 · 15:30
+                    22/09/2026 · 15:30
                 </span>
 
             </div>
@@ -1090,6 +1101,35 @@
                     <p>
                         Lista de clientes para registrar o modelo
                         de cobrança individual de cada um.
+                    </p>
+
+                    <div class="card-arrow">
+                        ›
+                    </div>
+
+                </a>
+
+
+
+                <!-- RECEBIMENTOS MERCADO URSO -->
+
+                <a class="card teal-card" href="https://claude.ai/artifact/G1QPBbftMh87wh5LFy2ShQ">
+
+                    <div class="card-icon teal">
+                        <svg viewBox="0 0 24 24"><path d="M12.89 1.45l8 4A2 2 0 0 1 22 7.24v9.53a2 2 0 0 1-1.11 1.79l-8 4a2 2 0 0 1-1.79 0l-8-4a2 2 0 0 1-1.1-1.8V7.24a2 2 0 0 1 1.11-1.79l8-4a2 2 0 0 1 1.78 0z"/><polyline points="2.32 6.16 12 11 21.68 6.16"/><line x1="12" y1="22.76" x2="12" y2="11"/></svg>
+                    </div>
+
+                    <span class="card-status active">
+                        ATIVO
+                    </span>
+
+                    <h3>
+                        Recebimentos Mercado Urso
+                    </h3>
+
+                    <p>
+                        Log de recebimentos — notas, fornecedores
+                        e volumes recebidos no Mercado Urso.
                     </p>
 
                     <div class="card-arrow">
@@ -1262,3 +1302,5 @@ function updateThemeIcon(theme){
 })();
 </script>
 
+
+</body>
