@@ -824,7 +824,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         try{
           var result = buildEanXml(nota);
           var baseName = nota.fileName.replace(/\.xml$/i, '');
-          downloadFile(baseName + '_codigoEAN.xml', result.xmlStr, 'application/xml;charset=utf-8');
+          downloadXmlAsZip(baseName + '_codigoEAN.xml', result.xmlStr);
           if(result.skipped > 0){
             toast(result.replaced + ' código(s) substituído(s) pelo EAN · ' + result.skipped + ' item(ns) sem EAN válido mantiveram o código original', 'success');
           } else {
@@ -1227,7 +1227,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     try{
       var result = buildEanXml({ rawXml: n.rawXml, itens: notaItens });
       var baseName = (n.fileName || ('nf_' + (n.numero||'sem_numero'))).replace(/\.xml$/i, '');
-      downloadFile(baseName + '_codigoEAN.xml', result.xmlStr, 'application/xml;charset=utf-8');
+      downloadXmlAsZip(baseName + '_codigoEAN.xml', result.xmlStr);
       addHistorico(ag, 'XML gerado com código = EAN para NF ' + (n.numero || n.fileName) + ' (' + result.replaced + ' código(s) substituído(s))', 'Sistema');
       saveAgendamentos();
       if(result.skipped > 0){
@@ -1394,6 +1394,81 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var a = document.createElement('a');
     a.href = dataUrl; a.download = filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+
+  // ---------- .zip mínimo (sem compressão) para contornar a lista de extensões aceitas pelo download ----------
+  // O recurso "downloads" da plataforma só aceita uma lista fixa de extensões, e .xml não está
+  // nela — por isso "Gerar XML" empacota o XML dentro de um .zip (extensão aceita) antes de salvar.
+  function crc32Bytes(bytes){
+    if(!crc32Bytes.table){
+      var t = [];
+      for(var n = 0; n < 256; n++){
+        var c = n;
+        for(var k = 0; k < 8; k++){ c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); }
+        t[n] = c >>> 0;
+      }
+      crc32Bytes.table = t;
+    }
+    var crc = 0xFFFFFFFF;
+    for(var i = 0; i < bytes.length; i++){
+      crc = crc32Bytes.table[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+  function zipU16(n){ return [n & 0xFF, (n >>> 8) & 0xFF]; }
+  function zipU32(n){ return [n & 0xFF, (n >>> 8) & 0xFF, (n >>> 16) & 0xFF, (n >>> 24) & 0xFF]; }
+  function zipStoreSingleFile(filename, contentStr){
+    var nameBytes = Array.from(new TextEncoder().encode(filename));
+    var dataBytes = new TextEncoder().encode(contentStr);
+    var crc = crc32Bytes(dataBytes);
+    var size = dataBytes.length;
+
+    var localHeader = [].concat(
+      zipU32(0x04034b50), zipU16(20), zipU16(0), zipU16(0), zipU16(0), zipU16(0),
+      zipU32(crc), zipU32(size), zipU32(size),
+      zipU16(nameBytes.length), zipU16(0),
+      nameBytes
+    );
+    var localHeaderBytes = new Uint8Array(localHeader);
+
+    var centralHeader = [].concat(
+      zipU32(0x02014b50), zipU16(20), zipU16(20), zipU16(0), zipU16(0), zipU16(0), zipU16(0),
+      zipU32(crc), zipU32(size), zipU32(size),
+      zipU16(nameBytes.length), zipU16(0), zipU16(0), zipU16(0), zipU16(0),
+      zipU32(0), zipU32(0),
+      nameBytes
+    );
+    var centralHeaderBytes = new Uint8Array(centralHeader);
+
+    var centralOffset = localHeaderBytes.length + dataBytes.length;
+    var eocd = [].concat(
+      zipU32(0x06054b50), zipU16(0), zipU16(0), zipU16(1), zipU16(1),
+      zipU32(centralHeaderBytes.length), zipU32(centralOffset), zipU16(0)
+    );
+    var eocdBytes = new Uint8Array(eocd);
+
+    return new Blob([localHeaderBytes, dataBytes, centralHeaderBytes, eocdBytes], {type:'application/zip'});
+  }
+  function downloadXmlAsZip(name, xmlContent){
+    if(downloadsNS){
+      try{
+        var zipBlob = zipStoreSingleFile(name, xmlContent);
+        var zipName = name.replace(/\.xml$/i, '') + '.zip';
+        downloadsNS.save({filename: zipName, data: zipBlob}).then(function(){
+          toast('XML gerado e salvo dentro de um .zip (o formato .xml sozinho não é aceito para download aqui — extraia o .zip para obter o .xml).', 'success');
+        }).catch(function(e){
+          if(e && e.code === 'declined'){ toast('Download cancelado.', 'error'); }
+          else{ toast('Não foi possível salvar o arquivo aqui.', 'error'); }
+        });
+        return;
+      }catch(e){ /* se o zip falhar por algum motivo, cai no download direto abaixo */ }
+    }
+    var blob = new Blob([xmlContent], {type:'application/xml;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   // ---------- Autocomplete lists ----------
