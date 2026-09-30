@@ -637,6 +637,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var idAttr = infNFe.getAttribute('Id') || '';
     if(idAttr){ chave = idAttr.replace(/^NFe/i, ''); }
 
+    var transp = infNFe.getElementsByTagName('transp')[0];
+    var volEls = transp ? transp.getElementsByTagName('vol') : [];
+    var volumes = 0;
+    for(var vi = 0; vi < volEls.length; vi++){
+      volumes += num(textOf(volEls[vi], 'qVol'));
+    }
+    var especieVol = volEls.length ? textOf(volEls[0], 'esp') : '';
+
     var nota = {
       id: uid(),
       fileName: fileName,
@@ -649,6 +657,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       emitenteCNPJ: textOf(emit, 'CNPJ') || textOf(emit, 'CPF'),
       destinatarioNome: textOf(dest, 'xNome'),
       valorTotal: num(textOf(total, 'vNF')),
+      volumes: volumes,
+      especieVol: especieVol,
       itens: [],
       danfeBase64: null,
       danfeFileName: null
@@ -981,6 +991,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         return {
           numero:n.numero, serie:n.serie, dataEmissao:n.dataEmissao, chave:n.chave,
           emitenteNome:n.emitenteNome, emitenteCNPJ:n.emitenteCNPJ, valorTotal:n.valorTotal,
+          volumes: n.volumes || 0, especieVol: n.especieVol || '',
           fileName:n.fileName, danfeBase64:n.danfeBase64 || null, danfeFileName:n.danfeFileName || null,
           rawXml:n.rawXml || null
         };
@@ -994,6 +1005,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         };
       }),
       valorTotal: uploadedNotas.reduce(function(s,n){ return s + n.valorTotal; }, 0),
+      volumes: uploadedNotas.reduce(function(s,n){ return s + (n.volumes||0); }, 0),
       status: 'pendente',
       historico: []
     };
@@ -1075,7 +1087,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         '<td>' + escapeHtml(ag.cliente) + '</td>' +
         '<td>' + escapeHtml(ag.fornecedor || '—') + '</td>' +
         '<td class="mono"><span class="nf-link" data-hist-id="' + ag.id + '" title="Ver histórico">' + escapeHtml(nfs) + '</span>' + (temDanfe ? ' <span title="DANFE anexado" style="opacity:.75;">📎</span>' : '') + '</td>' +
-        '<td class="num">' + ag.itens.length + '</td>' +
+        '<td class="num">' + ag.itens.length + (ag.volumes ? ' <span class="badge neutral" title="Volumes declarados na nota">' + fmtNum(ag.volumes) + ' vol.</span>' : '') + '</td>' +
         '<td class="num">R$ ' + fmtMoney(ag.valorTotal) + '</td>' +
         '<td><select class="status-select" data-id="' + ag.id + '">' +
             Object.keys(STATUS_LABEL).map(function(s){
