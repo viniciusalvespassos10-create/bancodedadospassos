@@ -1491,6 +1491,37 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     document.getElementById('transpList').innerHTML = transp.map(function(c){ return '<option value="'+escapeAttr(c)+'">'; }).join('');
   }
 
+  // ---------- Migração: preenche "volumes" em agendamentos salvos antes desse campo existir ----------
+  // O XML original de cada nota já fica salvo (rawXml); refaz a leitura do <transp><vol> uma vez
+  // para quem já tinha agendamentos confirmados antes dessa informação ser extraída.
+  function extractVolumesFromXml(rawXml){
+    if(!rawXml) return 0;
+    try{
+      var doc = new DOMParser().parseFromString(rawXml, 'text/xml');
+      var transp = doc.getElementsByTagName('transp')[0];
+      var volEls = transp ? transp.getElementsByTagName('vol') : [];
+      var total = 0;
+      for(var i = 0; i < volEls.length; i++){
+        total += num(textOf(volEls[i], 'qVol'));
+      }
+      return total;
+    }catch(e){ return 0; }
+  }
+  function migrateVolumesIfNeeded(){
+    var changed = false;
+    agendamentos.forEach(function(ag){
+      if(ag.volumes !== undefined) return;
+      var total = 0;
+      (ag.notas || []).forEach(function(n){
+        if(n.volumes === undefined){ n.volumes = extractVolumesFromXml(n.rawXml); }
+        total += n.volumes || 0;
+      });
+      ag.volumes = total;
+      changed = true;
+    });
+    if(changed) saveAgendamentos();
+  }
+
   // ---------- Init ----------
   function init(){
     var today = new Date();
@@ -1500,6 +1531,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if(el) el.addEventListener('input', saveDraft);
     });
     loadDraft();
+    migrateVolumesIfNeeded();
     updateTabCounts();
     refreshDatalists();
     renderLista();
