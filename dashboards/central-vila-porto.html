@@ -1424,7 +1424,7 @@ function updateThemeIcon(theme){
   var pendingHref = null;
 
   function isUnlocked(){
-    try{ return localStorage.getItem('vp_unlocked') === '1'; }catch(e){ return false; }
+    try{ return localStorage.getItem('vp_unlocked_v2') === '1'; }catch(e){ return false; }
   }
   function openModal(href){
     pendingHref = href;
@@ -1439,7 +1439,7 @@ function updateThemeIcon(theme){
   }
   function tryUnlock(){
     if(input.value === SENHA){
-      try{ localStorage.setItem('vp_unlocked', '1'); }catch(e){}
+      try{ localStorage.setItem('vp_unlocked_v2', '1'); }catch(e){}
       var href = pendingHref;
       closeModal();
       if(href) window.location.href = href;
