@@ -1662,12 +1662,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       var cProdEls = prod.getElementsByTagName('cProd');
       if(!cProdEls.length) continue;
       var usavel = item.ean && item.eanStatus !== 'sem_gtin' && item.eanStatus !== 'invalido';
-      if(usavel){
-        cProdEls[0].textContent = item.ean + '-' + suffix;
-        replaced++;
-      } else {
-        skipped++;
-      }
+      var base = usavel ? item.ean : cProdEls[0].textContent;
+      cProdEls[0].textContent = base + '-' + suffix;
+      if(usavel){ replaced++; } else { skipped++; }
     }
     var serializer = new XMLSerializer();
     var xmlStr = serializer.serializeToString(doc);
@@ -1832,12 +1829,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var t = tratativasLista.find(function(r){ return r.id === id; });
     if(!t) return;
     var itensRows = (t.itens||[]).map(function(it){
+      var usavel = it.ean && it.eanStatus !== 'sem_gtin' && it.eanStatus !== 'invalido';
+      var codigoGerado = (usavel ? it.ean : it.cProd) + '-' + t.suffix;
       return '<tr>' +
         '<td class="mono">' + escapeHtml(it.cProd) + '</td>' +
         '<td>' + escapeHtml(it.xProd) + '</td>' +
         '<td class="mono">' + (it.ean || '—') + '</td>' +
         '<td><span class="badge ' + (it.eanStatus==='ok'?'ok':(it.eanStatus==='sem_gtin'?'neutral':'warn')) + '">' + it.eanLabel + '</span></td>' +
-        '<td class="mono">' + (it.ean ? (it.ean + '-' + t.suffix) : '—') + '</td>' +
+        '<td class="mono">' + escapeHtml(codigoGerado) + '</td>' +
         '<td class="num">' + fmtNum(it.qCom) + ' ' + escapeHtml(it.uCom) + '</td>' +
         '<td class="num">R$ ' + fmtMoney(it.vProd) + '</td>' +
       '</tr>';
@@ -1913,9 +1912,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         rows.push([formatDateBR(t.data), t.hora, TRATATIVA_TIPO_LABEL[t.tipo], t.cliente, t.fornecedor, t.numero, '', '', '', '', '', '', '', '', STATUS_LABEL[t.status]]);
       }
       (t.itens||[]).forEach(function(it){
+        var usavelCsv = it.ean && it.eanStatus !== 'sem_gtin' && it.eanStatus !== 'invalido';
         rows.push([
           formatDateBR(t.data), t.hora, TRATATIVA_TIPO_LABEL[t.tipo], t.cliente, t.fornecedor, t.numero,
-          it.cProd, it.xProd, it.ean, it.eanLabel, (it.ean ? it.ean + '-' + t.suffix : ''),
+          it.cProd, it.xProd, it.ean, it.eanLabel, (usavelCsv ? it.ean : it.cProd) + '-' + t.suffix,
           it.qCom, it.uCom, it.vProd, STATUS_LABEL[t.status]
         ]);
       });
