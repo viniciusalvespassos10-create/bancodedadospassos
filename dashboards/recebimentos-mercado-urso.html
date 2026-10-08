@@ -417,7 +417,6 @@
           <div class="hint">Formato aceito: .xml — múltiplos arquivos permitidos</div>
         </div>
         <input type="file" id="fileInputOutlet" accept=".xml,text/xml" multiple style="display:none">
-        <div id="outletContainer" style="margin-top:14px;"></div>
       </div>
       <div class="card">
         <h2>Leilão</h2>
@@ -428,7 +427,64 @@
           <div class="hint">Formato aceito: .xml — múltiplos arquivos permitidos</div>
         </div>
         <input type="file" id="fileInputLeilao" accept=".xml,text/xml" multiple style="display:none">
-        <div id="leilaoContainer" style="margin-top:14px;"></div>
+      </div>
+    </div>
+
+    <div class="kpis" style="margin-top:20px;">
+      <div class="kpi"><div class="lbl">Total tratativas</div><div class="val" id="kpiTratTotal">0</div></div>
+      <div class="kpi"><div class="lbl">Pendentes</div><div class="val warn" id="kpiTratPendentes">0</div></div>
+      <div class="kpi"><div class="lbl">Confirmados</div><div class="val accent" id="kpiTratConfirmados">0</div></div>
+      <div class="kpi"><div class="lbl">Recebidos</div><div class="val success" id="kpiTratRecebidos">0</div></div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <div class="filters">
+          <input type="search" id="buscaTrat" placeholder="Buscar por cliente, fornecedor ou NF...">
+          <select id="filtroTipoTrat">
+            <option value="">Outlet e Leilão</option>
+            <option value="outlet">Outlet</option>
+            <option value="leilao">Leilão</option>
+          </select>
+          <select id="filtroStatusTrat">
+            <option value="">Todos os status</option>
+            <option value="pendente">Pendente</option>
+            <option value="confirmado">Confirmado</option>
+            <option value="recebido">Recebido</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+          <input type="date" id="filtroDataTrat">
+          <button class="btn sm ghost" id="btnLimparFiltrosTrat">Limpar filtros</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn sm" id="btnExportJsonTrat">Backup (.json)</button>
+          <button class="btn sm" id="btnImportJsonTrat">Importar backup</button>
+          <button class="btn sm" id="btnExportCsvTrat">Exportar Excel (.xlsx)</button>
+          <input type="file" id="importInputTrat" accept=".json" style="display:none">
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data / Hora</th>
+              <th>Tipo</th>
+              <th>Cliente</th>
+              <th>Fornecedor</th>
+              <th>NF</th>
+              <th class="num">Itens</th>
+              <th class="num">Valor Total</th>
+              <th>Status</th>
+              <th>XML</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tratativasBody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="tratativasEmpty" style="display:none;">
+        <div class="ico">📭</div>
+        Nenhuma tratativa encontrada.
       </div>
     </div>
   </section>
@@ -1554,12 +1610,36 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // ---------- Tratativas: Outlet / Leilão ----------
   // Ao anexar o XML da NF-e, extrai o EAN de cada item e gera um novo XML com
   // o código do produto substituído por EAN + sufixo (-AV no Outlet, -LL no Leilão).
-  var LS_TRATATIVAS = 'tratativas_outlet_leilao_v2';
+  // A lista combinada (Outlet + Leilão) segue o mesmo formato da tela "Agendamentos".
+  var LS_TRATATIVAS = 'tratativas_outlet_leilao_v3';
   var TRATATIVA_SUFFIX = { outlet: 'AV', leilao: 'LL' };
-  var tratativas = loadJSON(LS_TRATATIVAS, { outlet: [], leilao: [] });
+  var TRATATIVA_TIPO_LABEL = { outlet: 'Outlet', leilao: 'Leilão' };
+  var tratativasLista = loadJSON(LS_TRATATIVAS, null);
+  if(tratativasLista === null){
+    tratativasLista = [];
+    var legacyTrat = loadJSON('tratativas_outlet_leilao_v2', null);
+    if(legacyTrat){
+      ['outlet','leilao'].forEach(function(kind){
+        (legacyTrat[kind] || []).forEach(function(rec){
+          try{
+            var notaMig = parseNFeXML(rec.rawXml, rec.fileName);
+            var criadoEmMig = rec.createdAt || new Date().toISOString();
+            tratativasLista.push({
+              id: rec.id || uid(), tipo: kind, fileName: rec.fileName,
+              numero: notaMig.numero, serie: notaMig.serie, cliente: notaMig.destinatarioNome,
+              fornecedor: notaMig.emitenteNome, valorTotal: notaMig.valorTotal, volumes: notaMig.volumes,
+              itens: notaMig.itens, replaced: rec.replaced, skipped: rec.skipped,
+              rawXml: notaMig.rawXml, suffix: rec.suffix, status: 'pendente',
+              data: criadoEmMig.slice(0,10), hora: criadoEmMig.slice(11,16), criadoEm: criadoEmMig
+            });
+          }catch(e){ /* ignora registro corrompido na migração */ }
+        });
+      });
+    }
+  }
   function saveTratativas(){
     try{
-      localStorage.setItem(LS_TRATATIVAS, JSON.stringify(tratativas));
+      localStorage.setItem(LS_TRATATIVAS, JSON.stringify(tratativasLista));
       return true;
     }catch(e){
       toast('Não foi possível salvar: armazenamento local cheio. Remova algum registro.', 'error');
@@ -1602,59 +1682,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var result = buildSuffixedXml(nota, suffix);
     var baseName = fileName.replace(/\.xml$/i, '');
     downloadXmlAsZip(baseName + '_' + suffix + '.xml', result.xmlStr);
-    tratativas[kind] = tratativas[kind] || [];
-    tratativas[kind].unshift({
-      id: uid(), fileName: fileName, numero: nota.numero, serie: nota.serie,
-      emitenteNome: nota.emitenteNome, itensCount: nota.itens.length,
-      replaced: result.replaced, skipped: result.skipped,
-      rawXml: nota.rawXml, suffix: suffix, createdAt: new Date().toISOString()
+    var now = new Date();
+    tratativasLista.unshift({
+      id: uid(), tipo: kind, fileName: fileName,
+      numero: nota.numero, serie: nota.serie, cliente: nota.destinatarioNome,
+      fornecedor: nota.emitenteNome, valorTotal: nota.valorTotal, volumes: nota.volumes,
+      itens: nota.itens, replaced: result.replaced, skipped: result.skipped,
+      rawXml: nota.rawXml, suffix: suffix, status: 'pendente',
+      data: now.toISOString().slice(0,10), hora: now.toTimeString().slice(0,5),
+      criadoEm: now.toISOString()
     });
     saveTratativas();
-    renderTratativaList(kind);
-  }
-  function renderTratativaList(kind){
-    var container = document.getElementById(kind + 'Container');
-    var registros = tratativas[kind] || [];
-    if(!registros.length){ container.innerHTML = ''; return; }
-    container.innerHTML = registros.map(function(n, idx){
-      return '<div class="nota-card">' +
-        '<div class="nota-head">' +
-          '<div class="meta">' +
-            'NF <b>' + (n.numero || '—') + '</b> · Série <b>' + (n.serie || '—') + '</b><br>' +
-            'Emitente: <b>' + escapeHtml(n.emitenteNome || '—') + '</b><br>' +
-            'Itens: <b>' + n.itensCount + '</b> (' + n.replaced + ' com sufixo -' + n.suffix + (n.skipped ? ', ' + n.skipped + ' sem EAN válido' : '') + ') · Arquivo: ' + escapeHtml(n.fileName) +
-          '</div>' +
-          '<div class="btn-row" style="justify-content:flex-end;margin-top:0;">' +
-            '<button class="btn sm" data-tratativa-redownload="' + kind + '" data-idx="' + idx + '">baixar novamente</button>' +
-            '<button class="btn sm danger" data-rm-tratativa="' + kind + '" data-rm-idx="' + idx + '">remover</button>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-    container.querySelectorAll('[data-tratativa-redownload]').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var k = btn.dataset.tratativaRedownload;
-        var idx = parseInt(btn.dataset.idx, 10);
-        var rec = tratativas[k][idx];
-        try{
-          var nota = parseNFeXML(rec.rawXml, rec.fileName);
-          var result = buildSuffixedXml(nota, rec.suffix);
-          var baseName = rec.fileName.replace(/\.xml$/i, '');
-          downloadXmlAsZip(baseName + '_' + rec.suffix + '.xml', result.xmlStr);
-        }catch(err){
-          toast('Erro ao gerar XML: ' + err.message, 'error');
-        }
-      });
-    });
-    container.querySelectorAll('[data-rm-tratativa]').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var k = btn.dataset.rmTratativa;
-        var idx = parseInt(btn.dataset.rmIdx, 10);
-        tratativas[k].splice(idx, 1);
-        saveTratativas();
-        renderTratativaList(k);
-      });
-    });
+    renderTratativasLista();
   }
   function handleTratativaFiles(kind, fileList){
     var files = Array.prototype.slice.call(fileList).filter(function(f){
@@ -1694,8 +1733,211 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   setupTratativaDropzone('outlet', 'dropzoneOutlet', 'fileInputOutlet');
   setupTratativaDropzone('leilao', 'dropzoneLeilao', 'fileInputLeilao');
-  renderTratativaList('outlet');
-  renderTratativaList('leilao');
+
+  function renderTratativasLista(){
+    var body = document.getElementById('tratativasBody');
+    var busca = document.getElementById('buscaTrat').value.trim().toLowerCase();
+    var filtroTipo = document.getElementById('filtroTipoTrat').value;
+    var filtroStatus = document.getElementById('filtroStatusTrat').value;
+    var filtroData = document.getElementById('filtroDataTrat').value;
+
+    var filtrados = tratativasLista.filter(function(t){
+      if(filtroTipo && t.tipo !== filtroTipo) return false;
+      if(filtroStatus && t.status !== filtroStatus) return false;
+      if(filtroData && t.data !== filtroData) return false;
+      if(busca){
+        var hay = ((t.cliente||'') + ' ' + (t.fornecedor||'') + ' ' + (t.numero||'')).toLowerCase();
+        if(hay.indexOf(busca) === -1) return false;
+      }
+      return true;
+    });
+
+    body.innerHTML = '';
+    document.getElementById('tratativasEmpty').style.display = filtrados.length ? 'none' : 'block';
+
+    filtrados.forEach(function(t){
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + formatDateBR(t.data) + '<br><span style="color:var(--text-faint);font-size:11px;">' + (t.hora||'') + '</span></td>' +
+        '<td><b>' + TRATATIVA_TIPO_LABEL[t.tipo] + '</b></td>' +
+        '<td>' + escapeHtml(t.cliente || '—') + '</td>' +
+        '<td>' + escapeHtml(t.fornecedor || '—') + '</td>' +
+        '<td class="mono">' + escapeHtml(t.numero || t.fileName || '—') + '</td>' +
+        '<td class="num">' + (t.itens ? t.itens.length : 0) + (t.volumes ? ' <span class="badge neutral" title="Volumes declarados na nota">' + fmtNum(t.volumes) + ' vol.</span>' : '') + '</td>' +
+        '<td class="num">R$ ' + fmtMoney(t.valorTotal) + '</td>' +
+        '<td><select class="status-select" data-trat-id="' + t.id + '">' +
+            Object.keys(STATUS_LABEL).map(function(s){
+              return '<option value="'+s+'"'+(s===t.status?' selected':'')+'>'+STATUS_LABEL[s]+'</option>';
+            }).join('') +
+          '</select></td>' +
+        '<td><button class="btn sm" data-trat-redownload="' + t.id + '">baixar novamente</button></td>' +
+        '<td>' +
+          '<button class="btn sm ghost" data-trat-view="' + t.id + '">ver</button> ' +
+          '<button class="btn sm danger" data-trat-del="' + t.id + '">excluir</button>' +
+        '</td>';
+      body.appendChild(tr);
+    });
+
+    body.querySelectorAll('[data-trat-redownload]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var t = tratativasLista.find(function(r){ return r.id === btn.dataset.tratRedownload; });
+        if(!t) return;
+        try{
+          var nota = parseNFeXML(t.rawXml, t.fileName);
+          var result = buildSuffixedXml(nota, t.suffix);
+          var baseName = (t.fileName||'nf').replace(/\.xml$/i, '');
+          downloadXmlAsZip(baseName + '_' + t.suffix + '.xml', result.xmlStr);
+        }catch(err){
+          toast('Erro ao gerar XML: ' + err.message, 'error');
+        }
+      });
+    });
+    body.querySelectorAll('.status-select[data-trat-id]').forEach(function(sel){
+      sel.addEventListener('change', function(){
+        var t = tratativasLista.find(function(r){ return r.id === sel.dataset.tratId; });
+        if(t){
+          t.status = sel.value;
+          saveTratativas();
+          renderTratativasLista();
+        }
+      });
+    });
+    body.querySelectorAll('[data-trat-view]').forEach(function(btn){
+      btn.addEventListener('click', function(){ openTratativaDetail(btn.dataset.tratView); });
+    });
+    body.querySelectorAll('[data-trat-del]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var delId = btn.dataset.tratDel;
+        showConfirmModal(
+          'Excluir tratativa',
+          'Essa ação não pode ser desfeita. Deseja realmente excluir este registro?',
+          'Excluir',
+          function(){
+            tratativasLista = tratativasLista.filter(function(r){ return r.id !== delId; });
+            saveTratativas();
+            renderTratativasLista();
+            toast('Registro excluído', 'success');
+          }
+        );
+      });
+    });
+
+    document.getElementById('kpiTratTotal').textContent = tratativasLista.length;
+    document.getElementById('kpiTratPendentes').textContent = tratativasLista.filter(function(t){return t.status==='pendente';}).length;
+    document.getElementById('kpiTratConfirmados').textContent = tratativasLista.filter(function(t){return t.status==='confirmado';}).length;
+    document.getElementById('kpiTratRecebidos').textContent = tratativasLista.filter(function(t){return t.status==='recebido';}).length;
+  }
+
+  function openTratativaDetail(id){
+    var t = tratativasLista.find(function(r){ return r.id === id; });
+    if(!t) return;
+    var itensRows = (t.itens||[]).map(function(it){
+      return '<tr>' +
+        '<td class="mono">' + escapeHtml(it.cProd) + '</td>' +
+        '<td>' + escapeHtml(it.xProd) + '</td>' +
+        '<td class="mono">' + (it.ean || '—') + '</td>' +
+        '<td><span class="badge ' + (it.eanStatus==='ok'?'ok':(it.eanStatus==='sem_gtin'?'neutral':'warn')) + '">' + it.eanLabel + '</span></td>' +
+        '<td class="mono">' + (it.ean ? (it.ean + '-' + t.suffix) : '—') + '</td>' +
+        '<td class="num">' + fmtNum(it.qCom) + ' ' + escapeHtml(it.uCom) + '</td>' +
+        '<td class="num">R$ ' + fmtMoney(it.vProd) + '</td>' +
+      '</tr>';
+    }).join('');
+
+    document.getElementById('modalContent').innerHTML =
+      '<h2 style="margin-top:0;">' + TRATATIVA_TIPO_LABEL[t.tipo] + ' — ' + escapeHtml(t.cliente || '—') + '</h2>' +
+      '<div class="pill-summary" style="margin-bottom:14px;">' +
+        '<span class="badge ' + STATUS_CLS[t.status] + '">' + STATUS_LABEL[t.status] + '</span>' +
+        '<span class="badge neutral">' + formatDateBR(t.data) + ' · ' + t.hora + '</span>' +
+        '<span class="badge neutral">' + (t.itens?t.itens.length:0) + ' item(ns)</span>' +
+        '<span class="badge neutral">R$ ' + fmtMoney(t.valorTotal) + '</span>' +
+      '</div>' +
+      '<div class="row2" style="margin-bottom:14px;">' +
+        '<div class="footnote"><b style="color:var(--text)">Fornecedor:</b> ' + escapeHtml(t.fornecedor||'—') + '</div>' +
+        '<div class="footnote"><b style="color:var(--text)">NF:</b> ' + escapeHtml(t.numero||'—') + ' · Série ' + escapeHtml(t.serie||'—') + '</div>' +
+      '</div>' +
+      '<div class="divider"></div>' +
+      '<h3>Itens (código gerado com sufixo -' + t.suffix + ')</h3>' +
+      '<div class="tbl-wrap"><table><thead><tr><th>Cód. Original</th><th>Descrição</th><th>EAN</th><th>Status</th><th>Código Gerado</th><th class="num">Qtd</th><th class="num">Vlr Total</th></tr></thead>' +
+      '<tbody>' + (itensRows || '<tr><td colspan="7" class="footnote">Nenhum item.</td></tr>') + '</tbody></table></div>';
+
+    document.getElementById('modalBg').classList.add('active');
+  }
+
+  ['buscaTrat','filtroTipoTrat','filtroStatusTrat','filtroDataTrat'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', renderTratativasLista);
+    document.getElementById(id).addEventListener('change', renderTratativasLista);
+  });
+  document.getElementById('btnLimparFiltrosTrat').addEventListener('click', function(){
+    document.getElementById('buscaTrat').value = '';
+    document.getElementById('filtroTipoTrat').value = '';
+    document.getElementById('filtroStatusTrat').value = '';
+    document.getElementById('filtroDataTrat').value = '';
+    renderTratativasLista();
+  });
+
+  document.getElementById('btnExportJsonTrat').addEventListener('click', function(){
+    var payload = {tratativas: tratativasLista, exportadoEm: new Date().toISOString()};
+    downloadFile('tratativas_outlet_leilao_backup.json', JSON.stringify(payload, null, 2), 'application/json');
+  });
+  document.getElementById('btnImportJsonTrat').addEventListener('click', function(){
+    document.getElementById('importInputTrat').click();
+  });
+  document.getElementById('importInputTrat').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var payload = JSON.parse(reader.result);
+        if(payload.tratativas){
+          tratativasLista = payload.tratativas.concat(tratativasLista.filter(function(a){
+            return !payload.tratativas.some(function(b){ return b.id === a.id; });
+          }));
+        }
+        saveTratativas();
+        renderTratativasLista();
+        toast('Backup importado com sucesso', 'success');
+      }catch(err){
+        toast('Arquivo de backup inválido', 'error');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+  document.getElementById('btnExportCsvTrat').addEventListener('click', function(){
+    var headers = ['Data','Hora','Tipo','Cliente','Fornecedor','NF','Cod_Original','Descricao','EAN','Status_EAN','Codigo_Gerado','Qtd','Unidade','Valor_Total','Status'];
+    var eanColIdx = headers.indexOf('EAN');
+    var rows = [headers.slice()];
+    tratativasLista.forEach(function(t){
+      if(!t.itens || !t.itens.length){
+        rows.push([formatDateBR(t.data), t.hora, TRATATIVA_TIPO_LABEL[t.tipo], t.cliente, t.fornecedor, t.numero, '', '', '', '', '', '', '', '', STATUS_LABEL[t.status]]);
+      }
+      (t.itens||[]).forEach(function(it){
+        rows.push([
+          formatDateBR(t.data), t.hora, TRATATIVA_TIPO_LABEL[t.tipo], t.cliente, t.fornecedor, t.numero,
+          it.cProd, it.xProd, it.ean, it.eanLabel, (it.ean ? it.ean + '-' + t.suffix : ''),
+          it.qCom, it.uCom, it.vProd, STATUS_LABEL[t.status]
+        ]);
+      });
+    });
+    var ws = XLSX.utils.aoa_to_sheet(rows);
+    var qtdIdx = headers.indexOf('Qtd');
+    var valorIdx = headers.indexOf('Valor_Total');
+    for(var r = 1; r < rows.length; r++){
+      setNumericCell(ws, r, eanColIdx, rows[r][eanColIdx], '0');
+      setNumericCell(ws, r, qtdIdx, rows[r][qtdIdx], '0.###');
+      setNumericCell(ws, r, valorIdx, rows[r][valorIdx], '#,##0.00');
+    }
+    ws['!cols'] = headers.map(function(h){
+      return {wch: h === 'Descricao' ? 32 : (h === 'EAN' || h === 'Codigo_Gerado' ? 16 : 14)};
+    });
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Tratativas');
+    var wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    downloadFile('tratativas_outlet_leilao.xlsx', wbout, 'application/octet-stream');
+  });
+
+  renderTratativasLista();
 
   // ---------- Init ----------
   function init(){
