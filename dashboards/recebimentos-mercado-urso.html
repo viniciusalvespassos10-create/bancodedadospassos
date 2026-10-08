@@ -410,24 +410,24 @@
     <div class="row2">
       <div class="card">
         <h2>Outlet</h2>
-        <p class="desc">Anexe documentos, fotos ou planilhas relacionados às tratativas de Outlet.</p>
+        <p class="desc">Anexe o(s) XML da NF-e: o EAN de cada item é extraído e um novo XML é gerado com o código do produto substituído pelo EAN + sufixo "-AV", baixado automaticamente.</p>
         <div class="dropzone" id="dropzoneOutlet">
           <div class="ico">📄</div>
-          <div class="main">Clique para selecionar ou arraste arquivo(s) aqui</div>
-          <div class="hint">Qualquer formato — múltiplos arquivos permitidos</div>
+          <div class="main">Clique para selecionar ou arraste o(s) XML aqui</div>
+          <div class="hint">Formato aceito: .xml — múltiplos arquivos permitidos</div>
         </div>
-        <input type="file" id="fileInputOutlet" multiple style="display:none">
+        <input type="file" id="fileInputOutlet" accept=".xml,text/xml" multiple style="display:none">
         <div id="outletContainer" style="margin-top:14px;"></div>
       </div>
       <div class="card">
         <h2>Leilão</h2>
-        <p class="desc">Anexe documentos, fotos ou planilhas relacionados às tratativas de Leilão.</p>
+        <p class="desc">Anexe o(s) XML da NF-e: o EAN de cada item é extraído e um novo XML é gerado com o código do produto substituído pelo EAN + sufixo "-LL", baixado automaticamente.</p>
         <div class="dropzone" id="dropzoneLeilao">
           <div class="ico">📄</div>
-          <div class="main">Clique para selecionar ou arraste arquivo(s) aqui</div>
-          <div class="hint">Qualquer formato — múltiplos arquivos permitidos</div>
+          <div class="main">Clique para selecionar ou arraste o(s) XML aqui</div>
+          <div class="hint">Formato aceito: .xml — múltiplos arquivos permitidos</div>
         </div>
-        <input type="file" id="fileInputLeilao" multiple style="display:none">
+        <input type="file" id="fileInputLeilao" accept=".xml,text/xml" multiple style="display:none">
         <div id="leilaoContainer" style="margin-top:14px;"></div>
       </div>
     </div>
@@ -1552,31 +1552,100 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   // ---------- Tratativas: Outlet / Leilão ----------
-  var LS_TRATATIVAS = 'tratativas_outlet_leilao_v1';
-  var MAX_TRATATIVA_BYTES = 8 * 1024 * 1024; // 8MB por arquivo
+  // Ao anexar o XML da NF-e, extrai o EAN de cada item e gera um novo XML com
+  // o código do produto substituído por EAN + sufixo (-AV no Outlet, -LL no Leilão).
+  var LS_TRATATIVAS = 'tratativas_outlet_leilao_v2';
+  var TRATATIVA_SUFFIX = { outlet: 'AV', leilao: 'LL' };
   var tratativas = loadJSON(LS_TRATATIVAS, { outlet: [], leilao: [] });
   function saveTratativas(){
     try{
       localStorage.setItem(LS_TRATATIVAS, JSON.stringify(tratativas));
       return true;
     }catch(e){
-      toast('Não foi possível salvar: armazenamento local cheio. Remova algum arquivo anexado.', 'error');
+      toast('Não foi possível salvar: armazenamento local cheio. Remova algum registro.', 'error');
       return false;
     }
   }
+  function buildSuffixedXml(nota, suffix){
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(nota.rawXml, 'text/xml');
+    var parseErr = doc.getElementsByTagName('parsererror');
+    if(parseErr && parseErr.length){
+      throw new Error('XML original inválido');
+    }
+    var detList = doc.getElementsByTagName('det');
+    var replaced = 0, skipped = 0;
+    for(var i = 0; i < detList.length; i++){
+      var prod = detList[i].getElementsByTagName('prod')[0];
+      var item = nota.itens[i];
+      if(!prod || !item) continue;
+      var cProdEls = prod.getElementsByTagName('cProd');
+      if(!cProdEls.length) continue;
+      var usavel = item.ean && item.eanStatus !== 'sem_gtin' && item.eanStatus !== 'invalido';
+      if(usavel){
+        cProdEls[0].textContent = item.ean + '-' + suffix;
+        replaced++;
+      } else {
+        skipped++;
+      }
+    }
+    var serializer = new XMLSerializer();
+    var xmlStr = serializer.serializeToString(doc);
+    if(!/^\s*<\?xml/i.test(xmlStr)){
+      xmlStr = '<?xml version="1.0" encoding="UTF-8"?>\n' + xmlStr;
+    }
+    return {xmlStr: xmlStr, replaced: replaced, skipped: skipped};
+  }
+  function processTratativaXml(kind, xmlText, fileName){
+    var suffix = TRATATIVA_SUFFIX[kind];
+    var nota = parseNFeXML(xmlText, fileName);
+    var result = buildSuffixedXml(nota, suffix);
+    var baseName = fileName.replace(/\.xml$/i, '');
+    downloadXmlAsZip(baseName + '_' + suffix + '.xml', result.xmlStr);
+    tratativas[kind] = tratativas[kind] || [];
+    tratativas[kind].unshift({
+      id: uid(), fileName: fileName, numero: nota.numero, serie: nota.serie,
+      emitenteNome: nota.emitenteNome, itensCount: nota.itens.length,
+      replaced: result.replaced, skipped: result.skipped,
+      rawXml: nota.rawXml, suffix: suffix, createdAt: new Date().toISOString()
+    });
+    saveTratativas();
+    renderTratativaList(kind);
+  }
   function renderTratativaList(kind){
     var container = document.getElementById(kind + 'Container');
-    var itens = tratativas[kind] || [];
-    if(!itens.length){ container.innerHTML = ''; return; }
-    container.innerHTML = itens.map(function(f, idx){
-      return '<div class="nota-card" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">' +
-        '<div style="min-width:0;">' +
-          '<a href="' + f.dataUrl + '" target="_blank" style="font-weight:600;word-break:break-all;">' + escapeHtml(f.fileName) + '</a>' +
-          '<div class="footnote" style="margin:0;">' + new Date(f.addedAt).toLocaleString('pt-BR') + '</div>' +
+    var registros = tratativas[kind] || [];
+    if(!registros.length){ container.innerHTML = ''; return; }
+    container.innerHTML = registros.map(function(n, idx){
+      return '<div class="nota-card">' +
+        '<div class="nota-head">' +
+          '<div class="meta">' +
+            'NF <b>' + (n.numero || '—') + '</b> · Série <b>' + (n.serie || '—') + '</b><br>' +
+            'Emitente: <b>' + escapeHtml(n.emitenteNome || '—') + '</b><br>' +
+            'Itens: <b>' + n.itensCount + '</b> (' + n.replaced + ' com sufixo -' + n.suffix + (n.skipped ? ', ' + n.skipped + ' sem EAN válido' : '') + ') · Arquivo: ' + escapeHtml(n.fileName) +
+          '</div>' +
+          '<div class="btn-row" style="justify-content:flex-end;margin-top:0;">' +
+            '<button class="btn sm" data-tratativa-redownload="' + kind + '" data-idx="' + idx + '">baixar novamente</button>' +
+            '<button class="btn sm danger" data-rm-tratativa="' + kind + '" data-rm-idx="' + idx + '">remover</button>' +
+          '</div>' +
         '</div>' +
-        '<button class="btn sm danger" data-rm-tratativa="' + kind + '" data-rm-idx="' + idx + '">remover</button>' +
       '</div>';
     }).join('');
+    container.querySelectorAll('[data-tratativa-redownload]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var k = btn.dataset.tratativaRedownload;
+        var idx = parseInt(btn.dataset.idx, 10);
+        var rec = tratativas[k][idx];
+        try{
+          var nota = parseNFeXML(rec.rawXml, rec.fileName);
+          var result = buildSuffixedXml(nota, rec.suffix);
+          var baseName = rec.fileName.replace(/\.xml$/i, '');
+          downloadXmlAsZip(baseName + '_' + rec.suffix + '.xml', result.xmlStr);
+        }catch(err){
+          toast('Erro ao gerar XML: ' + err.message, 'error');
+        }
+      });
+    });
     container.querySelectorAll('[data-rm-tratativa]').forEach(function(btn){
       btn.addEventListener('click', function(){
         var k = btn.dataset.rmTratativa;
@@ -1588,24 +1657,24 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     });
   }
   function handleTratativaFiles(kind, fileList){
-    var files = Array.prototype.slice.call(fileList);
-    if(!files.length) return;
+    var files = Array.prototype.slice.call(fileList).filter(function(f){
+      return /\.xml$/i.test(f.name);
+    });
+    if(!files.length){
+      toast('Selecione arquivo(s) .xml da NF-e', 'error');
+      return;
+    }
     files.forEach(function(file){
-      if(file.size > MAX_TRATATIVA_BYTES){
-        toast('Arquivo "' + file.name + '" muito grande (' + (file.size/1024/1024).toFixed(1) + 'MB). Limite de 8MB por arquivo.', 'error');
-        return;
-      }
       var reader = new FileReader();
       reader.onload = function(){
-        tratativas[kind] = tratativas[kind] || [];
-        tratativas[kind].push({ fileName: file.name, dataUrl: reader.result, addedAt: new Date().toISOString() });
-        if(saveTratativas()){
-          renderTratativaList(kind);
-          toast('Arquivo "' + file.name + '" anexado em ' + (kind === 'outlet' ? 'Outlet' : 'Leilão'), 'success');
+        try{
+          processTratativaXml(kind, reader.result, file.name);
+        }catch(err){
+          toast(err.message || 'Erro ao ler XML', 'error');
         }
       };
       reader.onerror = function(){ toast('Falha ao ler o arquivo ' + file.name, 'error'); };
-      reader.readAsDataURL(file);
+      reader.readAsText(file, 'UTF-8');
     });
   }
   function setupTratativaDropzone(kind, dzId, inputId){
