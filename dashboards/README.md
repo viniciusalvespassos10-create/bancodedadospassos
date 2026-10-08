@@ -4,7 +4,7 @@ Código-fonte dos painéis publicados como Claude Artifacts para a Vila Porto In
 
 ## Painéis
 
-- **Central Vila Porto** (`central-vila-porto.html`) — menu principal com acesso aos módulos, com card próprio para Recebimentos Mercado Urso. O painel com a lista de cards é mostrado direto, sem senha; cada card de módulo ativo tem um ícone de cadeado e pede senha só no clique, antes de abrir o módulo (ver nota de segurança abaixo). Depois de digitada corretamente uma vez, o navegador lembra e não pede de novo para nenhum card.
+- **Central Vila Porto** (`central-vila-porto.html`) — menu principal com acesso aos módulos, com card próprio para Recebimentos Mercado Urso. O painel com a lista de cards é mostrado direto, sem senha; os cards de Faturamento, Ocupação & Capacidade e Apurações de Serviços têm um ícone de cadeado e pedem senha só no clique, antes de abrir o módulo (ver nota de segurança abaixo) — o card de Recebimentos Mercado Urso não tem cadeado e abre direto, sem senha. Depois de digitada corretamente uma vez, o navegador lembra e não pede de novo para nenhum card protegido.
   Publicado em: https://claude.ai/code/artifact/a2f16c2a-b621-4e3d-8b7c-670900dd50ba
 
 - **Faturamento** (`faturamento-vila-porto.html`) — receita, metas anuais e desempenho mensal por armazém e cliente.
@@ -46,9 +46,9 @@ Apuração Cacique, Apuração Olam e Agendamento de Recebimento (Mercado Urso) 
 
 ## Senha dos cards do Painel Principal (Central Vila Porto)
 
-A tela do Painel Principal (lista de módulos) é mostrada direto, sem senha. Cada card de módulo ativo tem um ícone de cadeado; ao clicar num card, a página pede uma senha antes de abrir o módulo. **Importante: isso não é uma proteção de segurança real.** É um JavaScript simples rodando no navegador de quem acessa — a senha fica no código-fonte da página (em `central-vila-porto.html`, função `initCardLocks`) e qualquer pessoa com conhecimento básico de navegador (aba "Ver código-fonte" ou DevTools) consegue ver a senha ou pular a verificação. Serve como uma barreira contra acesso casual (alguém que receba o link sem querer, por exemplo), não contra alguém que queira de fato contornar. Se a Vila Porto precisar de controle de acesso real (por usuário, com login), isso exigiria uma solução diferente, fora do que um Claude Artifact estático suporta.
+A tela do Painel Principal (lista de módulos) é mostrada direto, sem senha. Os cards de Faturamento, Ocupação & Capacidade e Apurações de Serviços têm um ícone de cadeado; ao clicar num desses cards, a página pede uma senha antes de abrir o módulo. O card de Recebimentos Mercado Urso não tem cadeado e abre direto, sem senha. **Importante: isso não é uma proteção de segurança real.** É um JavaScript simples rodando no navegador de quem acessa — a senha fica no código-fonte da página (em `central-vila-porto.html`, função `initCardLocks`) e qualquer pessoa com conhecimento básico de navegador (aba "Ver código-fonte" ou DevTools) consegue ver a senha ou pular a verificação. Serve como uma barreira contra acesso casual (alguém que receba o link sem querer, por exemplo), não contra alguém que queira de fato contornar. Se a Vila Porto precisar de controle de acesso real (por usuário, com login), isso exigiria uma solução diferente, fora do que um Claude Artifact estático suporta.
 
-Depois de digitar a senha certa uma vez (em qualquer card), o navegador guarda isso em `localStorage` e não pede de novo para nenhum card nesse mesmo navegador/dispositivo — para pedir de novo, é só limpar os dados do site ou acessar de outro navegador/dispositivo.
+Depois de digitar a senha certa uma vez (em qualquer card protegido), o navegador guarda isso em `localStorage` e não pede de novo para nenhum card protegido nesse mesmo navegador/dispositivo — para pedir de novo, é só limpar os dados do site ou acessar de outro navegador/dispositivo.
 
 ## Publicar uma alteração
 
