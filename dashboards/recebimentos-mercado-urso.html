@@ -407,10 +407,28 @@
 
   <!-- ============ VIEW: TRATATIVAS - OUTLET / LEILÃO ============ -->
   <section class="view" id="view-tratativas">
-    <div class="card">
-      <div class="empty">
-        <div class="ico">🗂️</div>
-        Em construção — o conteúdo desta aba será definido em breve.
+    <div class="row2">
+      <div class="card">
+        <h2>Outlet</h2>
+        <p class="desc">Anexe documentos, fotos ou planilhas relacionados às tratativas de Outlet.</p>
+        <div class="dropzone" id="dropzoneOutlet">
+          <div class="ico">📄</div>
+          <div class="main">Clique para selecionar ou arraste arquivo(s) aqui</div>
+          <div class="hint">Qualquer formato — múltiplos arquivos permitidos</div>
+        </div>
+        <input type="file" id="fileInputOutlet" multiple style="display:none">
+        <div id="outletContainer" style="margin-top:14px;"></div>
+      </div>
+      <div class="card">
+        <h2>Leilão</h2>
+        <p class="desc">Anexe documentos, fotos ou planilhas relacionados às tratativas de Leilão.</p>
+        <div class="dropzone" id="dropzoneLeilao">
+          <div class="ico">📄</div>
+          <div class="main">Clique para selecionar ou arraste arquivo(s) aqui</div>
+          <div class="hint">Qualquer formato — múltiplos arquivos permitidos</div>
+        </div>
+        <input type="file" id="fileInputLeilao" multiple style="display:none">
+        <div id="leilaoContainer" style="margin-top:14px;"></div>
       </div>
     </div>
   </section>
@@ -1532,6 +1550,83 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     });
     if(changed) saveAgendamentos();
   }
+
+  // ---------- Tratativas: Outlet / Leilão ----------
+  var LS_TRATATIVAS = 'tratativas_outlet_leilao_v1';
+  var MAX_TRATATIVA_BYTES = 8 * 1024 * 1024; // 8MB por arquivo
+  var tratativas = loadJSON(LS_TRATATIVAS, { outlet: [], leilao: [] });
+  function saveTratativas(){
+    try{
+      localStorage.setItem(LS_TRATATIVAS, JSON.stringify(tratativas));
+      return true;
+    }catch(e){
+      toast('Não foi possível salvar: armazenamento local cheio. Remova algum arquivo anexado.', 'error');
+      return false;
+    }
+  }
+  function renderTratativaList(kind){
+    var container = document.getElementById(kind + 'Container');
+    var itens = tratativas[kind] || [];
+    if(!itens.length){ container.innerHTML = ''; return; }
+    container.innerHTML = itens.map(function(f, idx){
+      return '<div class="nota-card" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">' +
+        '<div style="min-width:0;">' +
+          '<a href="' + f.dataUrl + '" target="_blank" style="font-weight:600;word-break:break-all;">' + escapeHtml(f.fileName) + '</a>' +
+          '<div class="footnote" style="margin:0;">' + new Date(f.addedAt).toLocaleString('pt-BR') + '</div>' +
+        '</div>' +
+        '<button class="btn sm danger" data-rm-tratativa="' + kind + '" data-rm-idx="' + idx + '">remover</button>' +
+      '</div>';
+    }).join('');
+    container.querySelectorAll('[data-rm-tratativa]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var k = btn.dataset.rmTratativa;
+        var idx = parseInt(btn.dataset.rmIdx, 10);
+        tratativas[k].splice(idx, 1);
+        saveTratativas();
+        renderTratativaList(k);
+      });
+    });
+  }
+  function handleTratativaFiles(kind, fileList){
+    var files = Array.prototype.slice.call(fileList);
+    if(!files.length) return;
+    files.forEach(function(file){
+      if(file.size > MAX_TRATATIVA_BYTES){
+        toast('Arquivo "' + file.name + '" muito grande (' + (file.size/1024/1024).toFixed(1) + 'MB). Limite de 8MB por arquivo.', 'error');
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(){
+        tratativas[kind] = tratativas[kind] || [];
+        tratativas[kind].push({ fileName: file.name, dataUrl: reader.result, addedAt: new Date().toISOString() });
+        if(saveTratativas()){
+          renderTratativaList(kind);
+          toast('Arquivo "' + file.name + '" anexado em ' + (kind === 'outlet' ? 'Outlet' : 'Leilão'), 'success');
+        }
+      };
+      reader.onerror = function(){ toast('Falha ao ler o arquivo ' + file.name, 'error'); };
+      reader.readAsDataURL(file);
+    });
+  }
+  function setupTratativaDropzone(kind, dzId, inputId){
+    var dropzone = document.getElementById(dzId);
+    var fileInput = document.getElementById(inputId);
+    dropzone.addEventListener('click', function(){ fileInput.click(); });
+    dropzone.addEventListener('dragover', function(e){ e.preventDefault(); dropzone.classList.add('drag'); });
+    dropzone.addEventListener('dragleave', function(){ dropzone.classList.remove('drag'); });
+    dropzone.addEventListener('drop', function(e){
+      e.preventDefault(); dropzone.classList.remove('drag');
+      handleTratativaFiles(kind, e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', function(e){
+      handleTratativaFiles(kind, e.target.files);
+      fileInput.value = '';
+    });
+  }
+  setupTratativaDropzone('outlet', 'dropzoneOutlet', 'fileInputOutlet');
+  setupTratativaDropzone('leilao', 'dropzoneLeilao', 'fileInputLeilao');
+  renderTratativaList('outlet');
+  renderTratativaList('leilao');
 
   // ---------- Init ----------
   function init(){
