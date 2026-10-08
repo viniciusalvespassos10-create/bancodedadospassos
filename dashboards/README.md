@@ -4,7 +4,7 @@ Código-fonte dos painéis publicados como Claude Artifacts para a Vila Porto In
 
 ## Painéis
 
-- **Central Vila Porto** (`central-vila-porto.html`) — menu principal com acesso aos módulos, com card próprio para Recebimentos Mercado Urso.
+- **Central Vila Porto** (`central-vila-porto.html`) — menu principal com acesso aos módulos, com card próprio para Recebimentos Mercado Urso. Pede uma senha antes de mostrar o conteúdo (ver nota de segurança abaixo); depois de digitada corretamente uma vez, o navegador lembra e não pede de novo.
   Publicado em: https://claude.ai/code/artifact/a2f16c2a-b621-4e3d-8b7c-670900dd50ba
 
 - **Faturamento** (`faturamento-vila-porto.html`) — receita, metas anuais e desempenho mensal por armazém e cliente.
@@ -43,6 +43,12 @@ Todos os sete painéis de dados (Faturamento, Estoque Vila Velha, Apurações de
 - Agendamento de Recebimento (Mercado Urso) também guarda os dados apenas no `localStorage` do navegador (sem `artifact`), pelo mesmo motivo do Microware — agendamentos, DANFEs anexados e o dicionário De/Para ficam só naquele navegador/computador. Usa o recurso `downloads` para exportar XML, CSV/XLSX, backup JSON e baixar o DANFE anexado. Além dos agendamentos já confirmados, o formulário "Novo Agendamento" em andamento (notas XML anexadas, DANFEs, código×EAN preenchido, campos do formulário) fica salvo como rascunho a cada alteração e ao fechar/trocar de aba, e é restaurado automaticamente ao reabrir o painel — só é descartado ao confirmar o agendamento ou clicar em "Limpar formulário". O botão "Gerar XML (código = EAN)" salva o resultado dentro de um `.zip` em vez de um `.xml` direto, porque o recurso `downloads` da plataforma só aceita uma lista fixa de extensões e `.xml` não está nela — basta extrair o `.zip` para obter o `.xml`.
 
 Apuração Cacique, Apuração Olam e Agendamento de Recebimento (Mercado Urso) também usam o recurso `downloads` (para exportar CSV/relatório/XML/XLSX), além do `artifact` (nos dois primeiros). Por decisão de escopo/limitação da plataforma, essas continuam sem o link público "Anyone with the link" habilitado — a capacidade `downloads` bloqueia o compartilhamento público, independente de o `artifact` estar presente. Apuração MOT não usa `downloads` (o "Gerar demonstrativo" apenas copia texto para a área de transferência), então pode ter o link público habilitado se desejado.
+
+## Senha do Painel Principal (Central Vila Porto)
+
+A tela inicial pede uma senha antes de mostrar o conteúdo. **Importante: isso não é uma proteção de segurança real.** É um JavaScript simples rodando no navegador de quem acessa — a senha fica no código-fonte da página (em `central-vila-porto.html`, função `initLock`) e qualquer pessoa com conhecimento básico de navegador (aba "Ver código-fonte" ou DevTools) consegue ver a senha ou pular a verificação. Serve como uma barreira contra acesso casual (alguém que receba o link sem querer, por exemplo), não contra alguém que queira de fato contornar. Se a Vila Porto precisar de controle de acesso real (por usuário, com login), isso exigiria uma solução diferente, fora do que um Claude Artifact estático suporta.
+
+Depois de digitar a senha certa, o navegador guarda isso em `localStorage` e não pede de novo nesse mesmo navegador/dispositivo — para pedir de novo, é só limpar os dados do site ou acessar de outro navegador/dispositivo.
 
 ## Publicar uma alteração
 
