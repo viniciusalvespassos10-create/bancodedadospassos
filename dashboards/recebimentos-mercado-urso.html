@@ -790,6 +790,20 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   });
   fileInput.addEventListener('change', function(e){ handleFiles(e.target.files); });
 
+  function readFileWithRetry(file, onOk, onFail, attemptsLeft){
+    if(attemptsLeft === undefined) attemptsLeft = 2;
+    var reader = new FileReader();
+    reader.onload = function(){ onOk(reader.result); };
+    reader.onerror = function(){
+      if(attemptsLeft > 0){
+        setTimeout(function(){ readFileWithRetry(file, onOk, onFail, attemptsLeft - 1); }, 300);
+      } else {
+        onFail();
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+
   function handleFiles(fileList){
     var files = Array.prototype.slice.call(fileList).filter(function(f){
       return /\.xml$/i.test(f.name);
@@ -799,10 +813,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return;
     }
     files.forEach(function(file){
-      var reader = new FileReader();
-      reader.onload = function(){
+      readFileWithRetry(file, function(text){
         try{
-          var nota = parseNFeXML(reader.result, file.name);
+          var nota = parseNFeXML(text, file.name);
           uploadedNotas.push(nota);
           applyDeparaSuggestions(nota.itens);
           renderNotas();
@@ -812,9 +825,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         }catch(err){
           toast(err.message || 'Erro ao ler XML', 'error');
         }
-      };
-      reader.onerror = function(){ toast('Falha ao ler o arquivo ' + file.name, 'error'); };
-      reader.readAsText(file, 'UTF-8');
+      }, function(){
+        toast('Falha ao ler o arquivo ' + file.name + '. Se ele estiver numa pasta sincronizada (OneDrive, Google Drive etc.), verifique se já foi baixado para o computador e tente novamente.', 'error');
+      });
     });
     fileInput.value = '';
   }
@@ -1719,16 +1732,15 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return;
     }
     files.forEach(function(file){
-      var reader = new FileReader();
-      reader.onload = function(){
+      readFileWithRetry(file, function(text){
         try{
-          processTratativaXml(kind, reader.result, file.name);
+          processTratativaXml(kind, text, file.name);
         }catch(err){
           toast(err.message || 'Erro ao ler XML', 'error');
         }
-      };
-      reader.onerror = function(){ toast('Falha ao ler o arquivo ' + file.name, 'error'); };
-      reader.readAsText(file, 'UTF-8');
+      }, function(){
+        toast('Falha ao ler o arquivo ' + file.name + '. Se ele estiver numa pasta sincronizada (OneDrive, Google Drive etc.), verifique se já foi baixado para o computador e tente novamente.', 'error');
+      });
     });
   }
   function setupTratativaDropzone(kind, dzId, inputId){
