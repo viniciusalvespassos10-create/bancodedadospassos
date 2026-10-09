@@ -1478,11 +1478,29 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
+  function dataUrlToBlob(dataUrl){
+    var match = /^data:([^;,]*)(;base64)?,([\s\S]*)$/.exec(dataUrl);
+    if(!match) return null;
+    var mime = match[1] || 'application/octet-stream';
+    var isBase64 = !!match[2];
+    var dataPart = match[3];
+    if(isBase64){
+      var binary = atob(dataPart);
+      var bytes = new Uint8Array(binary.length);
+      for(var i = 0; i < binary.length; i++){ bytes[i] = binary.charCodeAt(i); }
+      return new Blob([bytes], {type: mime});
+    }
+    return new Blob([decodeURIComponent(dataPart)], {type: mime});
+  }
   function downloadDataUrl(dataUrl, filename){
     if(downloadsNS){
-      fetch(dataUrl).then(function(res){ return res.blob(); }).then(function(blob){
-        return downloadsNS.save({filename:filename, data:blob});
-      }).catch(function(e){
+      var blob = null;
+      try{ blob = dataUrlToBlob(dataUrl); }catch(e){ blob = null; }
+      if(!blob){
+        toast('Não foi possível salvar o arquivo aqui.', 'error');
+        return;
+      }
+      downloadsNS.save({filename:filename, data:blob}).catch(function(e){
         if(e && e.code === 'declined'){ toast('Download cancelado.', 'error'); }
         else{ toast('Não foi possível salvar o arquivo aqui.', 'error'); }
       });
