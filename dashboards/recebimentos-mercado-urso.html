@@ -534,14 +534,112 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // O artefato roda num iframe isolado que não concede permissão de download
   // a links/blobs comuns; o recurso "downloads" da plataforma media o salvamento.
   var downloadsNS = null;
+  var dbNS = null;
+  var assetsNS = null;
   async function initCapabilities(){
     try{
       if(window.claude && typeof window.claude.use === 'function'){
         downloadsNS = await window.claude.use('downloads');
+        dbNS = await window.claude.use('db');
+        assetsNS = await window.claude.use('assets');
       }
-    }catch(e){ downloadsNS = null; }
+    }catch(e){ /* alguma capacidade pode não estar disponível nesta visualização */ }
+    initSharedSync();
   }
   initCapabilities();
+
+  // ---------- Sincronização em tempo real (banco compartilhado da plataforma) ----------
+  // Quando "db" está disponível, Agendamentos e Tratativas deixam de viver só no
+  // localStorage de cada navegador: cada registro vira um documento na coleção
+  // correspondente, espelhado em tempo real para todo mundo com acesso a este painel.
+  // Sem "db" (visualização sem essa capacidade), o app continua funcionando só localmente,
+  // exatamente como antes.
+  var agendamentosSyncedMap = {};
+  var tratativasSyncedMap = {};
+  function sanitizeAgendamentoForDb(ag){
+    var clone = JSON.parse(JSON.stringify(ag));
+    (clone.notas || []).forEach(function(n){
+      // DANFEs anexados antes da sincronização (base64) são grandes demais para
+      // o banco compartilhado (limite de 256KB por documento) — ficam só no
+      // navegador onde foram anexados. Anexos novos usam "assets" (danfeUrl) e sincronizam normalmente.
+      if(n.danfeBase64){ delete n.danfeBase64; }
+    });
+    return clone;
+  }
+  function diffAndPush(col, arr, syncedMap, sanitize){
+    var currentIds = {};
+    arr.forEach(function(item){
+      if(!item || !item.id) return;
+      currentIds[item.id] = true;
+      var body = sanitize ? sanitize(item) : item;
+      var json = JSON.stringify(body);
+      if(syncedMap[item.id] !== json){
+        syncedMap[item.id] = json;
+        col.doc(item.id).set(body).catch(function(e){
+          if(e && e.code === 'invalid_argument'){
+            toast('Um registro não pôde ser sincronizado (sem permissão de edição neste painel, ou dado grande/inválido demais). Ele continua salvo só neste navegador.', 'error');
+          }
+        });
+      }
+    });
+    Object.keys(syncedMap).forEach(function(id){
+      if(!currentIds[id]){
+        delete syncedMap[id];
+        col.doc(id).delete().catch(function(e){});
+      }
+    });
+  }
+  function initSharedSync(){
+    if(!dbNS) return;
+    var agendamentosCol = dbNS.collection('agendamentos');
+    var tratativasCol = dbNS.collection('tratativas');
+    function seedIfEmpty(col, localArr, sanitize){
+      return col.get().then(function(snap){
+        if(snap.empty && localArr.length){
+          localArr.forEach(function(item){
+            if(!item || !item.id) return;
+            col.doc(item.id).set(sanitize ? sanitize(item) : item).catch(function(e){});
+          });
+        }
+      }).catch(function(e){});
+    }
+    Promise.all([
+      seedIfEmpty(agendamentosCol, agendamentos, sanitizeAgendamentoForDb),
+      seedIfEmpty(tratativasCol, tratativasLista)
+    ]).catch(function(){}).then(function(){
+      agendamentosCol.onSnapshot(function(snap){
+        var incoming = snap.docs.map(function(d){ return d.data(); });
+        agendamentosSyncedMap = {};
+        // O map de "já sincronizado" guarda a versão EXATA que está no banco (sem o
+        // DANFE antigo em base64), para não tentar reenviar o anexo restaurado abaixo.
+        incoming.forEach(function(item){ agendamentosSyncedMap[item.id] = JSON.stringify(item); });
+        // Restaura, só para exibição neste navegador, DANFEs antigos (base64) que
+        // não couberam no banco compartilhado — nunca são reenviados ao banco.
+        incoming.forEach(function(ag){
+          (ag.notas || []).forEach(function(n, idx){
+            if(!n.danfeUrl && !n.danfeBase64){
+              var cached = legacyDanfeCache[ag.id + '::' + idx];
+              if(cached){
+                n.danfeBase64 = cached.danfeBase64;
+                if(!n.danfeFileName) n.danfeFileName = cached.danfeFileName;
+              }
+            }
+          });
+        });
+        agendamentos = incoming;
+        try{ localStorage.setItem(LS_AGENDAMENTOS, JSON.stringify(agendamentos)); }catch(e){}
+        updateTabCounts(); renderLista(); refreshDatalists();
+      }, function(err){ /* sincronização indisponível; segue mostrando a última versão conhecida */ });
+      tratativasCol.onSnapshot(function(snap){
+        var incoming = snap.docs.map(function(d){ return d.data(); });
+        tratativasSyncedMap = {};
+        incoming.forEach(function(item){ tratativasSyncedMap[item.id] = JSON.stringify(item); });
+        tratativasLista = incoming;
+        try{ localStorage.setItem(LS_TRATATIVAS, JSON.stringify(tratativasLista)); }catch(e){}
+        renderTratativasLista();
+      }, function(err){ /* sincronização indisponível; segue mostrando a última versão conhecida */ });
+    });
+  }
 
   // ---------- Storage keys ----------
   var LS_AGENDAMENTOS = 'agendamentos_recebimento_v1';
@@ -553,6 +651,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var uploadedNotas = [];   // notas parsed for the form currently being filled
   var agendamentos = loadJSON(LS_AGENDAMENTOS, []);
   var depara = loadJSON(LS_DEPARA, {}); // { ean: {codigo, descricao, origem} }
+  // DANFEs anexados antes da sincronização (base64, grandes demais para o banco
+  // compartilhado) ficam de fora do que é sincronizado — guarda uma cópia local
+  // deles aqui para continuarem visíveis/baixáveis neste navegador mesmo depois
+  // que a versão sincronizada (sem o PDF) vier do banco e substituir "agendamentos".
+  var legacyDanfeCache = {};
+  agendamentos.forEach(function(ag){
+    (ag.notas || []).forEach(function(n, idx){
+      if(n.danfeBase64){
+        legacyDanfeCache[ag.id + '::' + idx] = {danfeBase64: n.danfeBase64, danfeFileName: n.danfeFileName};
+      }
+    });
+  });
 
   function loadJSON(key, fallback){
     try{
@@ -563,13 +673,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function saveAgendamentos(){
     try{
       localStorage.setItem(LS_AGENDAMENTOS, JSON.stringify(agendamentos));
-      return true;
     }catch(e){
-      toast('Não foi possível salvar: armazenamento local cheio (geralmente por DANFEs em PDF anexados). Remova algum PDF anexado ou exporte um backup e libere espaço.', 'error');
-      return false;
+      toast('Não foi possível salvar localmente: armazenamento cheio. Remova algum registro ou exporte um backup.', 'error');
     }
+    if(dbNS) diffAndPush(dbNS.collection('agendamentos'), agendamentos, agendamentosSyncedMap, sanitizeAgendamentoForDb);
+    return true;
   }
-  var MAX_DANFE_BYTES = 4 * 1024 * 1024; // 4MB por DANFE
+  var MAX_DANFE_BYTES = 20 * 1024 * 1024; // 20MB por DANFE (limite do recurso "assets")
+  var MAX_DANFE_BYTES_LOCAL = 4 * 1024 * 1024; // 4MB quando não há sincronização (fica só no navegador)
   function saveDepara(){
     try{ localStorage.setItem(LS_DEPARA, JSON.stringify(depara)); }catch(e){}
   }
@@ -746,6 +857,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       especieVol: especieVol,
       itens: [],
       danfeBase64: null,
+      danfeAssetId: null,
+      danfeUrl: null,
       danfeFileName: null
     };
 
@@ -862,8 +975,29 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       toast('Selecione um arquivo PDF', 'error');
       return;
     }
-    if(file.size > MAX_DANFE_BYTES){
-      toast('PDF muito grande (' + (file.size/1024/1024).toFixed(1) + 'MB). Limite de 4MB por DANFE.', 'error');
+    if(assetsNS){
+      if(file.size > MAX_DANFE_BYTES){
+        toast('PDF muito grande (' + (file.size/1024/1024).toFixed(1) + 'MB). Limite de 20MB por DANFE.', 'error');
+        return;
+      }
+      assetsNS.upload(file, {type:'application/pdf'}).then(function(res){
+        uploadedNotas[idx].danfeAssetId = res.id;
+        uploadedNotas[idx].danfeUrl = res.url;
+        uploadedNotas[idx].danfeFileName = file.name;
+        renderNotas();
+        toast('DANFE anexado à nota (visível para todos com acesso a este painel)', 'success');
+      }).catch(function(e){
+        toast('Não foi possível anexar o PDF: ' + (e && e.message ? e.message : 'erro desconhecido'), 'error');
+      });
+      return;
+    }
+    if(dbNS){
+      toast('Anexo de PDF indisponível nesta visualização (liberado apenas para quem pode editar este painel).', 'error');
+      return;
+    }
+    // Sem sincronização disponível: mantém o comportamento local original (base64 no navegador).
+    if(file.size > MAX_DANFE_BYTES_LOCAL){
+      toast('PDF muito grande (' + (file.size/1024/1024).toFixed(1) + 'MB). Limite de 4MB por DANFE neste modo.', 'error');
       return;
     }
     var reader = new FileReader();
@@ -903,10 +1037,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         '</div>' +
         '<div class="divider"></div>' +
         '<div class="danfe-row" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
-          (nota.danfeBase64
+          ((nota.danfeUrl || nota.danfeBase64)
             ? ('<span class="badge ok">DANFE anexado</span>' +
                '<span style="font-size:12px;color:var(--text-dim);">' + escapeHtml(nota.danfeFileName || '') + '</span>' +
-               '<a class="btn sm ghost" download="' + escapeAttr(nota.danfeFileName || 'danfe.pdf') + '" href="' + nota.danfeBase64 + '">baixar</a>' +
+               '<a class="btn sm ghost" download="' + escapeAttr(nota.danfeFileName || 'danfe.pdf') + '" href="' + (nota.danfeUrl || nota.danfeBase64) + '">baixar</a>' +
                '<button class="btn sm danger" data-rm-danfe="' + idx + '">remover DANFE</button>')
             : ('<div class="dropzone sm" data-danfe-drop-idx="' + idx + '">' +
                  '<div class="ico">📎</div>' +
@@ -969,9 +1103,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     c.querySelectorAll('[data-rm-danfe]').forEach(function(btn){
       btn.addEventListener('click', function(){
         var idx = parseInt(btn.dataset.rmDanfe, 10);
+        var assetId = uploadedNotas[idx].danfeAssetId;
         uploadedNotas[idx].danfeBase64 = null;
+        uploadedNotas[idx].danfeAssetId = null;
+        uploadedNotas[idx].danfeUrl = null;
         uploadedNotas[idx].danfeFileName = null;
         renderNotas();
+        if(assetId && assetsNS){ assetsNS.delete(assetId).catch(function(e){}); }
       });
     });
     saveDraft();
@@ -1090,7 +1228,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           numero:n.numero, serie:n.serie, dataEmissao:n.dataEmissao, chave:n.chave,
           emitenteNome:n.emitenteNome, emitenteCNPJ:n.emitenteCNPJ, valorTotal:n.valorTotal,
           volumes: n.volumes || 0, especieVol: n.especieVol || '',
-          fileName:n.fileName, danfeBase64:n.danfeBase64 || null, danfeFileName:n.danfeFileName || null,
+          fileName:n.fileName,
+          danfeBase64:n.danfeBase64 || null, danfeAssetId:n.danfeAssetId || null,
+          danfeUrl:n.danfeUrl || null, danfeFileName:n.danfeFileName || null,
           rawXml:n.rawXml || null
         };
       }),
@@ -1111,7 +1251,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     addHistorico(agendamento, 'Agendamento criado', 'Cliente');
     uploadedNotas.forEach(function(n){
       addHistorico(agendamento, 'Nota fiscal ' + (n.numero ? ('nº ' + n.numero) : n.fileName) + ' anexada', 'Cliente');
-      if(n.danfeBase64){
+      if(n.danfeAssetId || n.danfeBase64){
         addHistorico(agendamento, 'DANFE anexado à NF ' + (n.numero || n.fileName), 'Cliente');
       }
     });
@@ -1179,7 +1319,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     filtrados.forEach(function(ag){
       var tr = document.createElement('tr');
       var nfs = ag.notas.map(function(n){ return n.numero || '?'; }).join(', ') || '—';
-      var temDanfe = ag.notas.some(function(n){ return !!n.danfeBase64; });
+      var temDanfe = ag.notas.some(function(n){ return !!(n.danfeUrl || n.danfeBase64); });
       tr.innerHTML =
         '<td>' + formatDateBR(ag.data) + '<br><span style="color:var(--text-faint);font-size:11px;">' + (ag.hora||'') + '</span></td>' +
         '<td>' + escapeHtml(ag.cliente) + '</td>' +
@@ -1196,7 +1336,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
             ? ('<button class="btn sm" data-gen-row-id="' + ag.id + '">Gerar XML (código = EAN)</button>')
             : '<span style="color:var(--text-faint);font-size:11px;">—</span>'
           ) + '</td>' +
-        '<td>' + (ag.notas.some(function(n){ return !!n.danfeBase64; })
+        '<td>' + (ag.notas.some(function(n){ return !!(n.danfeUrl || n.danfeBase64); })
             ? ('<button class="btn sm" data-danfe-row-id="' + ag.id + '">Baixar PDF</button>')
             : '<span style="color:var(--text-faint);font-size:11px;">—</span>'
           ) + '</td>' +
@@ -1222,8 +1362,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         if(!ag) return;
         var baixou = false;
         ag.notas.forEach(function(n){
-          if(n.danfeBase64){
-            downloadDataUrl(n.danfeBase64, n.danfeFileName || ('danfe_' + (n.numero || 'nf') + '.pdf'));
+          if(n.danfeUrl || n.danfeBase64){
+            downloadDanfe(n.danfeUrl || n.danfeBase64, n.danfeFileName || ('danfe_' + (n.numero || 'nf') + '.pdf'));
             addHistorico(ag, 'DANFE da NF ' + (n.numero || n.fileName) + ' baixado', 'Cliente');
             baixou = true;
           }
@@ -1299,8 +1439,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       '</tr>';
     }).join('');
     var notasInfo = ag.notas.map(function(n){
-      var danfeLink = n.danfeBase64
-        ? (' · <a href="' + n.danfeBase64 + '" download="' + escapeAttr(n.danfeFileName || 'danfe.pdf') + '" style="font-weight:600;">baixar DANFE</a>')
+      var danfeLink = (n.danfeUrl || n.danfeBase64)
+        ? (' · <a href="' + (n.danfeUrl || n.danfeBase64) + '" download="' + escapeAttr(n.danfeFileName || 'danfe.pdf') + '" style="font-weight:600;">baixar DANFE</a>')
         : '';
       return '<div class="footnote">NF <b style="color:var(--text)">' + (n.numero||'—') + '</b> · ' + escapeHtml(n.emitenteNome||'—') + ' · R$ ' + fmtMoney(n.valorTotal) + ' · Chave: ' + (n.chave||'—') + danfeLink + '</div>';
     }).join('');
@@ -1476,13 +1616,22 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       ws[addr] = {t:'n', v:n, z:numFmt};
     }
   }
+  // Mensagem de erro do recurso "downloads": "extension_not_enabled" é o caso de quem
+  // está acessando como convidado externo (fora da organização) — a plataforma libera
+  // download só para membros da organização nesse caso. O registro em si já foi salvo e
+  // sincronizado normalmente; só o download direto não funciona para esse navegador.
+  function downloadsErrorToast(e){
+    if(e && e.code === 'declined'){ toast('Download cancelado.', 'error'); return; }
+    if(e && e.code === 'extension_not_enabled'){
+      toast('Este navegador não tem permissão de download neste painel (liberado só para quem é da organização). O registro já foi salvo e sincronizado — peça para alguém com acesso de edição baixar o arquivo.', 'error');
+      return;
+    }
+    toast('Não foi possível salvar o arquivo aqui.', 'error');
+  }
   function downloadFile(name, content, type){
     var blob = new Blob([content], {type:type});
     if(downloadsNS){
-      downloadsNS.save({filename:name, data:blob}).catch(function(e){
-        if(e && e.code === 'declined'){ toast('Download cancelado.', 'error'); }
-        else{ toast('Não foi possível salvar o arquivo aqui.', 'error'); }
-      });
+      downloadsNS.save({filename:name, data:blob}).catch(downloadsErrorToast);
       return;
     }
     var url = URL.createObjectURL(blob);
@@ -1505,23 +1654,34 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     return new Blob([decodeURIComponent(dataPart)], {type: mime});
   }
-  function downloadDataUrl(dataUrl, filename){
-    if(downloadsNS){
-      var blob = null;
-      try{ blob = dataUrlToBlob(dataUrl); }catch(e){ blob = null; }
-      if(!blob){
-        toast('Não foi possível salvar o arquivo aqui.', 'error');
+  // Baixa um DANFE a partir de uma data: URL (anexo antigo, pré-sincronização) ou de uma
+  // URL normal (anexo novo, guardado via "assets" e compartilhado entre todos os viewers).
+  function downloadDanfe(url, filename){
+    if(/^data:/i.test(url)){
+      if(downloadsNS){
+        var blob = null;
+        try{ blob = dataUrlToBlob(url); }catch(e){ blob = null; }
+        if(!blob){
+          toast('Não foi possível salvar o arquivo aqui.', 'error');
+          return;
+        }
+        downloadsNS.save({filename:filename, data:blob}).catch(downloadsErrorToast);
         return;
       }
-      downloadsNS.save({filename:filename, data:blob}).catch(function(e){
-        if(e && e.code === 'declined'){ toast('Download cancelado.', 'error'); }
-        else{ toast('Não foi possível salvar o arquivo aqui.', 'error'); }
-      });
+      var a1 = document.createElement('a');
+      a1.href = url; a1.download = filename;
+      document.body.appendChild(a1); a1.click(); document.body.removeChild(a1);
       return;
     }
-    var a = document.createElement('a');
-    a.href = dataUrl; a.download = filename;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    if(downloadsNS){
+      fetch(url).then(function(res){ return res.blob(); }).then(function(blob){
+        return downloadsNS.save({filename:filename, data:blob});
+      }).catch(downloadsErrorToast);
+      return;
+    }
+    var a2 = document.createElement('a');
+    a2.href = url; a2.download = filename;
+    document.body.appendChild(a2); a2.click(); document.body.removeChild(a2);
   }
 
   // ---------- .zip mínimo (sem compressão) para contornar a lista de extensões aceitas pelo download ----------
@@ -1584,10 +1744,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var zipName = name.replace(/\.xml$/i, '') + '.zip';
         downloadsNS.save({filename: zipName, data: zipBlob}).then(function(){
           toast('XML gerado e salvo dentro de um .zip (o formato .xml sozinho não é aceito para download aqui — extraia o .zip para obter o .xml).', 'success');
-        }).catch(function(e){
-          if(e && e.code === 'declined'){ toast('Download cancelado.', 'error'); }
-          else{ toast('Não foi possível salvar o arquivo aqui.', 'error'); }
-        });
+        }).catch(downloadsErrorToast);
         return;
       }catch(e){ /* se o zip falhar por algum motivo, cai no download direto abaixo */ }
     }
@@ -1671,11 +1828,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function saveTratativas(){
     try{
       localStorage.setItem(LS_TRATATIVAS, JSON.stringify(tratativasLista));
-      return true;
     }catch(e){
-      toast('Não foi possível salvar: armazenamento local cheio. Remova algum registro.', 'error');
-      return false;
+      toast('Não foi possível salvar localmente: armazenamento cheio. Remova algum registro.', 'error');
     }
+    if(dbNS) diffAndPush(dbNS.collection('tratativas'), tratativasLista, tratativasSyncedMap);
+    return true;
   }
   function buildSuffixedXml(nota, suffix){
     var parser = new DOMParser();
