@@ -556,6 +556,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // exatamente como antes.
   var agendamentosSyncedMap = {};
   var tratativasSyncedMap = {};
+  // Enquanto um registro está aqui (gravação em andamento, ou que falhou e ainda não foi
+  // corrigida), a versão local dele NUNCA é substituída por uma foto vinda do banco —
+  // isso evita que uma mudança de status (por exemplo) "volte" sozinha porque uma
+  // confirmação demorou ou porque o registro é grande demais para sincronizar.
+  var pendingAgendamentosWrites = {};
+  var pendingTratativasWrites = {};
+  var warnedAgendamentosWrites = {};
+  var warnedTratativasWrites = {};
   function sanitizeAgendamentoForDb(ag){
     var clone = JSON.parse(JSON.stringify(ag));
     (clone.notas || []).forEach(function(n){
@@ -566,7 +574,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     });
     return clone;
   }
-  function diffAndPush(col, arr, syncedMap, sanitize){
+  function diffAndPush(col, arr, syncedMap, pendingSet, warnedSet, sanitize){
     var currentIds = {};
     arr.forEach(function(item){
       if(!item || !item.id) return;
@@ -574,9 +582,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       var body = sanitize ? sanitize(item) : item;
       var json = JSON.stringify(body);
       if(syncedMap[item.id] !== json){
-        syncedMap[item.id] = json;
-        col.doc(item.id).set(body).catch(function(e){
-          if(e && e.code === 'invalid_argument'){
+        pendingSet[item.id] = true;
+        col.doc(item.id).set(body).then(function(){
+          syncedMap[item.id] = json;
+          delete pendingSet[item.id];
+          delete warnedSet[item.id];
+        }).catch(function(e){
+          // Mantém marcado como pendente de propósito: assim a próxima foto vinda do
+          // banco (ainda desatualizada) não sobrescreve a mudança local, e a próxima
+          // vez que algo for salvo esse registro tenta sincronizar de novo.
+          if(e && e.code === 'invalid_argument' && !warnedSet[item.id]){
+            warnedSet[item.id] = true;
             toast('Um registro não pôde ser sincronizado (sem permissão de edição neste painel, ou dado grande/inválido demais). Ele continua salvo só neste navegador.', 'error');
           }
         });
@@ -585,6 +601,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     Object.keys(syncedMap).forEach(function(id){
       if(!currentIds[id]){
         delete syncedMap[id];
+        delete pendingSet[id];
+        delete warnedSet[id];
         col.doc(id).delete().catch(function(e){});
       }
     });
@@ -613,9 +631,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         // O map de "já sincronizado" guarda a versão EXATA que está no banco (sem o
         // DANFE antigo em base64), para não tentar reenviar o anexo restaurado abaixo.
         incoming.forEach(function(item){ agendamentosSyncedMap[item.id] = JSON.stringify(item); });
+        // Se este navegador tem uma gravação em andamento (ou que falhou) para algum
+        // desses registros, mantém a versão local em vez da que acabou de chegar do
+        // banco — ela pode estar desatualizada em relação ao que ainda não foi confirmado.
+        var byId = {};
+        incoming.forEach(function(item){ byId[item.id] = item; });
+        agendamentos.forEach(function(localItem){
+          if(pendingAgendamentosWrites[localItem.id]){ byId[localItem.id] = localItem; }
+        });
+        var merged = incoming.map(function(item){ return byId[item.id]; });
+        Object.keys(byId).forEach(function(id){
+          if(!merged.some(function(m){ return m.id === id; })) merged.push(byId[id]);
+        });
         // Restaura, só para exibição neste navegador, DANFEs antigos (base64) que
         // não couberam no banco compartilhado — nunca são reenviados ao banco.
-        incoming.forEach(function(ag){
+        merged.forEach(function(ag){
           (ag.notas || []).forEach(function(n, idx){
             if(!n.danfeUrl && !n.danfeBase64){
               var cached = legacyDanfeCache[ag.id + '::' + idx];
@@ -626,7 +656,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
             }
           });
         });
-        agendamentos = incoming;
+        agendamentos = merged;
         try{ localStorage.setItem(LS_AGENDAMENTOS, JSON.stringify(agendamentos)); }catch(e){}
         updateTabCounts(); renderLista(); refreshDatalists();
       }, function(err){ /* sincronização indisponível; segue mostrando a última versão conhecida */ });
@@ -634,7 +664,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var incoming = snap.docs.map(function(d){ return d.data(); });
         tratativasSyncedMap = {};
         incoming.forEach(function(item){ tratativasSyncedMap[item.id] = JSON.stringify(item); });
-        tratativasLista = incoming;
+        var byIdT = {};
+        incoming.forEach(function(item){ byIdT[item.id] = item; });
+        tratativasLista.forEach(function(localItem){
+          if(pendingTratativasWrites[localItem.id]){ byIdT[localItem.id] = localItem; }
+        });
+        var mergedT = incoming.map(function(item){ return byIdT[item.id]; });
+        Object.keys(byIdT).forEach(function(id){
+          if(!mergedT.some(function(m){ return m.id === id; })) mergedT.push(byIdT[id]);
+        });
+        tratativasLista = mergedT;
         try{ localStorage.setItem(LS_TRATATIVAS, JSON.stringify(tratativasLista)); }catch(e){}
         renderTratativasLista();
       }, function(err){ /* sincronização indisponível; segue mostrando a última versão conhecida */ });
@@ -676,7 +715,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }catch(e){
       toast('Não foi possível salvar localmente: armazenamento cheio. Remova algum registro ou exporte um backup.', 'error');
     }
-    if(dbNS) diffAndPush(dbNS.collection('agendamentos'), agendamentos, agendamentosSyncedMap, sanitizeAgendamentoForDb);
+    if(dbNS) diffAndPush(dbNS.collection('agendamentos'), agendamentos, agendamentosSyncedMap, pendingAgendamentosWrites, warnedAgendamentosWrites, sanitizeAgendamentoForDb);
     return true;
   }
   var MAX_DANFE_BYTES = 20 * 1024 * 1024; // 20MB por DANFE (limite do recurso "assets")
@@ -1831,7 +1870,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }catch(e){
       toast('Não foi possível salvar localmente: armazenamento cheio. Remova algum registro.', 'error');
     }
-    if(dbNS) diffAndPush(dbNS.collection('tratativas'), tratativasLista, tratativasSyncedMap);
+    if(dbNS) diffAndPush(dbNS.collection('tratativas'), tratativasLista, tratativasSyncedMap, pendingTratativasWrites, warnedTratativasWrites);
     return true;
   }
   function buildSuffixedXml(nota, suffix){
